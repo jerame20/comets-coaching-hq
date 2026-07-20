@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#173b2b" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Comets Coaching HQ</title>
+    <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="Comets Coaching HQ home">
+        <span class="brand-mark" aria-hidden="true">C</span>
+        <span>
+          <strong>Comets</strong>
+          <small>Coaching HQ</small>
+        </span>
+      </a>
+      <button class="share-button" id="shareButton" type="button" aria-label="Share this coaching hub">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 8a3 3 0 1 0-2.83-4 3 3 0 0 0 .13 1l-6.1 3.05a3 3 0 1 0 0 3.9L15.3 15a3 3 0 1 0 .9-1.8l-6.1-3.05a3.2 3.2 0 0 0 0-.3L16.2 6.8A3 3 0 0 0 18 8Z"/></svg>
+        <span>Share</span>
+      </button>
+    </header>
+
+    <nav class="tab-bar" aria-label="Coaching sections">
+      <a href="#home" data-tab="home">Home</a>
+      <a href="#players" data-tab="players">Players</a>
+      <a href="#rotation" data-tab="rotation">Rotation</a>
+      <a href="#season" data-tab="season">Season</a>
+      <a href="#roles" data-tab="roles">Roles</a>
+      <a href="#gameday" data-tab="gameday">Game day</a>
+    </nav>
+
+    <main>
+      <section class="view active" id="home" data-view="home">
+        <div class="hero">
+          <div class="eyebrow"><span></span> Shared coach workspace</div>
+          <h1>One place to plan.<br /><em>One team to develop.</em></h1>
+          <p>Open the live planner, prep the next game, and keep every player moving forward.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#rotation">Open game rotation</a>
+            <a class="button secondary" href="https://docs.google.com/spreadsheets/d/1sG31dZoLYUNhUNntRkz9Qfbzh6aleKdKUHYZkxN5puQ/edit" target="_blank" rel="noopener">Open full Google Sheet</a>
+          </div>
+        </div>
+
+        <div class="field-card" aria-hidden="true">
+          <div class="field-lines"><span class="center-circle"></span></div>
+          <div class="field-copy">
+            <small>Our coaching north star</small>
+            <strong>Build brave, complete players.</strong>
+            <p>Rotate positions. Teach decisions. Compete with joy.</p>
+          </div>
+        </div>
+
+        <section class="quick-section" aria-labelledby="quick-heading">
+          <div class="section-heading">
+            <div>
+              <span>Quick access</span>
+              <h2 id="quick-heading">The stuff we need on the sideline</h2>
+            </div>
+            <span class="live-pill"><i></i> Live sheet</span>
+          </div>
+          <div class="quick-grid">
+            <a class="quick-card coral" href="#players">
+              <span class="card-icon">01</span>
+              <div><strong>Player development</strong><small>Notes, focus areas, and progress</small></div>
+              <b aria-hidden="true">↗</b>
+            </a>
+            <a class="quick-card gold" href="#rotation">
+              <span class="card-icon">02</span>
+              <div><strong>Game rotation</strong><small>Quarter-by-quarter positions</small></div>
+              <b aria-hidden="true">↗</b>
+            </a>
+            <a class="quick-card sky" href="#season">
+              <span class="card-icon">03</span>
+              <div><strong>Season coverage</strong><small>Balanced reps across every role</small></div>
+              <b aria-hidden="true">↗</b>
+            </a>
+            <a class="quick-card mint" href="#gameday">
+              <span class="card-icon">04</span>
+              <div><strong>Game-day view</strong><small>The clean sideline cheat sheet</small></div>
+              <b aria-hidden="true">↗</b>
+            </a>
+          </div>
+        </section>
+
+        <aside class="privacy-note">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 4.5 5v5.3c0 5 3.2 9.7 7.5 11.7 4.3-2 7.5-6.7 7.5-11.7V5L12 2Zm0 3.1 4.5 1.8v3.4c0 3.6-1.8 7-4.5 8.7-2.7-1.7-4.5-5.1-4.5-8.7V6.9L12 5.1Z"/></svg>
+          <div><strong>Player information stays private.</strong><span>The hub is a launcher. Names and notes remain inside the Google Sheet and follow its sharing permissions.</span></div>
+        </aside>
+      </section>
+
+      <section class="view sheet-view" id="players" data-view="players" data-gid="0" data-title="Player development" data-description="Track strengths, growth areas, confidence, and the next useful challenge for each player."></section>
+      <section class="view sheet-view" id="rotation" data-view="rotation" data-gid="1187879702" data-title="Game rotation" data-description="Quarter-by-quarter positions built for balanced development and a sane sideline."></section>
+      <section class="view sheet-view" id="season" data-view="season" data-gid="1891978176" data-title="Season coverage" data-description="See who has played where and keep development balanced over the full season."></section>
+      <section class="view sheet-view" id="roles" data-view="roles" data-gid="1273994141" data-title="Role guide" data-description="Simple responsibilities and coaching cues for every position on the field."></section>
+      <section class="view sheet-view" id="gameday" data-view="gameday" data-gid="671064886" data-title="Game-day use" data-description="The quick-reference view for substitutions, assignments, and in-game adjustments."></section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
+    <script src="app.js"></script>
+  </body>
+</html>
