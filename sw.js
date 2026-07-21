@@ -1,5 +1,5 @@
-const CACHE = "comets-hq-v11";
-const ASSETS = ["./", "./index.html", "./styles.css?v=11", "./data.js?v=10", "./app.js?v=12", "./manifest.json", "./icon.svg", "./assets/comets-team-reference.png"];
+const CACHE = "comets-hq-v12";
+const ASSETS = ["./", "./index.html", "./styles.css?v=12", "./data.js?v=10", "./app.js?v=13", "./manifest.json", "./icon.svg", "./assets/comets-team-reference.png"];
 self.addEventListener("install", (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener("activate", (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", (event) => {

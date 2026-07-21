@@ -171,6 +171,7 @@ gameState.playingSeconds ||= {};
 gameState.quarterPlayingSeconds ||= {};
 gameState.runningSince ||= null;
 let selectedPosition = null;
+let selectedBenchId = null;
 let clockTimer = null;
 let clockRunning = Boolean(gameState.runningSince);
 let wakeLock = null;
@@ -256,28 +257,56 @@ function playingTimeColor(seconds) {
   const lightness = progress < .35 ? 36 : progress < .72 ? 43 : 47;
   return { color: `hsl(${hue} 78% ${lightness}%)`, text: progress >= .34 && progress <= .66 ? "#11151d" : "#ffffff" };
 }
+function rankedBench(bench = currentBench()) {
+  const selectedRole = selectedPosition === null ? null : activeFormation().positions[selectedPosition]?.label;
+  return [...bench].sort((a, b) => {
+    if (selectedRole) {
+      const roleDifference = Number(roleMatches(playerById(b), selectedRole)) - Number(roleMatches(playerById(a), selectedRole));
+      if (roleDifference) return roleDifference;
+    }
+    return (gameState.playingSeconds[a] || 0) - (gameState.playingSeconds[b] || 0)
+      || currentQuarterPlayingSeconds(a) - currentQuarterPlayingSeconds(b)
+      || playerName(a).localeCompare(playerName(b));
+  });
+}
+function recommendedOutgoingPosition(incoming) {
+  if (!incoming) return null;
+  const lineup = currentLineup();
+  return lineup.map((id, index) => ({ id, index, position: activeFormation().positions[index]?.label }))
+    .sort((a, b) => Number(Boolean(a.id)) - Number(Boolean(b.id))
+      || Number(roleMatches(playerById(incoming), b.position)) - Number(roleMatches(playerById(incoming), a.position))
+      || currentQuarterPlayingSeconds(b.id) - currentQuarterPlayingSeconds(a.id)
+      || (gameState.playingSeconds[b.id] || 0) - (gameState.playingSeconds[a.id] || 0))[0]?.index ?? null;
+}
 function renderFormation() {
   const lineup = currentLineup();
   const formation = activeFormation();
+  const recommendedPosition = selectedBenchId ? recommendedOutgoingPosition(selectedBenchId) : null;
   document.getElementById("formation").innerHTML = formation.positions.map((position, index) => {
     const id = lineup[index];
     const quarterSeconds = id ? currentQuarterPlayingSeconds(id) : 0;
     const heat = playingTimeColor(quarterSeconds);
     const label = id ? `${position.label}, ${playerName(id)}, ${formatDuration(quarterSeconds)} played this quarter` : `${position.label}, open position`;
-    return `<button type="button" data-position="${index}" style="grid-column:${position.col} / span ${position.span};grid-row:${position.row};--player-color:${heat.color};--player-text:${heat.text}" class="field-player ${selectedPosition === index ? "selected" : ""} ${!id ? "open" : ""}" aria-label="${escapeHTML(label)}" aria-pressed="${selectedPosition === index}"><small class="field-position">${position.label}</small><strong class="field-name">${id ? escapeHTML(playerName(id)) : "OPEN"}</strong>${id ? `<span class="field-time">${formatDuration(quarterSeconds)}</span>` : ""}</button>`;
+    return `<button type="button" data-position="${index}" style="grid-column:${position.col} / span ${position.span};grid-row:${position.row};--player-color:${heat.color};--player-text:${heat.text}" class="field-player ${selectedPosition === index ? "selected" : ""} ${recommendedPosition === index ? "recommended-out" : ""} ${!id ? "open" : ""}" aria-label="${escapeHTML(label)}" aria-pressed="${selectedPosition === index}">${recommendedPosition === index ? `<b class="swap-hint">SUGGESTED</b>` : ""}<small class="field-position">${position.label}</small><strong class="field-name">${id ? escapeHTML(playerName(id)) : "OPEN"}</strong>${id ? `<span class="field-time">${formatDuration(quarterSeconds)}</span>` : ""}</button>`;
   }).join("");
 }
 function renderLive() {
   const lineup = currentLineup(); const bench = currentBench();
+  const recommendedBench = rankedBench(bench);
   const formation = activeFormation();
   document.getElementById("liveGameLabel").textContent = `Game ${gameState.game + 1} · Quarter ${gameState.quarter + 1}`;
   document.getElementById("liveFormationLabel").textContent = `${gameState.format === "indoor" ? "Indoor" : "Outdoor"} · ${gameState.teamSize}v${gameState.teamSize} · ${formation.name}`;
   document.querySelectorAll("[data-quarter]").forEach((button) => button.classList.toggle("active", Number(button.dataset.quarter) === gameState.quarter));
   renderFormation();
-  document.getElementById("benchGrid").innerHTML = bench.map((id) => `<button type="button" data-bench-id="${id}">${escapeHTML(playerName(id))}</button>`).join("") || `<p class="empty-state">No available bench players.</p>`;
+  document.getElementById("benchGrid").innerHTML = recommendedBench.map((id, index) => `<button type="button" data-bench-id="${id}" class="${selectedBenchId === id ? "selected" : ""}"><span class="bench-rank">${index === 0 ? "NEXT" : `#${index + 1}`}</span><strong>${escapeHTML(playerName(id))}</strong><small>${formatDuration(gameState.playingSeconds[id])} played</small></button>`).join("") || `<p class="empty-state">No available bench players.</p>`;
   document.getElementById("benchCount").textContent = `${bench.length} available`;
   document.getElementById("fieldCount").textContent = `${lineup.filter(Boolean).length} on field`;
-  document.getElementById("swapInstruction").textContent = selectedPosition === null ? "Tap a player on the field, then tap a bench player to swap." : `${formation.positions[selectedPosition].label} selected. Choose who goes in, or tap again to cancel.`;
+  const suggestedPosition = selectedBenchId ? recommendedOutgoingPosition(selectedBenchId) : null;
+  document.getElementById("swapInstruction").textContent = selectedBenchId
+    ? `${playerName(selectedBenchId)} selected. Tap the field player to replace${suggestedPosition === null ? "." : ` — suggested: ${lineup[suggestedPosition] ? playerName(lineup[suggestedPosition]) : "open spot"} at ${formation.positions[suggestedPosition].label}.`}`
+    : selectedPosition === null
+      ? "Choose either direction: tap a field player or a ranked bench player first."
+      : `${formation.positions[selectedPosition].label} selected. Choose who goes in, or tap again to cancel.`;
   renderPlayingTime();
   document.getElementById("subLog").innerHTML = gameState.log.length ? gameState.log.map((item) => `<li><span>${escapeHTML(item.time)}</span>${escapeHTML(item.text)}</li>`).join("") : `<li class="empty-state">No changes yet.</li>`;
   const next = document.getElementById("nextRotation");
@@ -316,7 +345,7 @@ function startClock() {
 }
 function stopClock() { settleClock(); endClock(false); saveGame(); renderClock(); renderPlayingTime(); }
 function loadQuarter(index, logChange = true) {
-  stopClock(); gameState.quarter = index; gameState.seconds = 720; selectedPosition = null;
+  stopClock(); gameState.quarter = index; gameState.seconds = 720; selectedPosition = null; selectedBenchId = null;
   gameState.quarterPlayingSeconds[index] ||= {};
   gameState.current = { lineup: [...gameState.plan[index].lineup], bench: [...gameState.plan[index].bench] };
   if (logChange) gameState.log.unshift({ type: "rotation", quarter: index, time: `Q${index + 1} · 12:00`, text: `Loaded Quarter ${index + 1} rotation` });
@@ -338,31 +367,41 @@ document.getElementById("startGame").addEventListener("click", () => {
   if (resumeCurrentQuarter) {
     const lineup = Array.from({ length: gameState.teamSize }, (_, index) => gameState.present.includes(previousLineup[index]) ? previousLineup[index] : null);
     const bench = gameState.present.filter((id) => !lineup.includes(id));
-    gameState.current = { lineup, bench }; gameState.editingSession = false; selectedPosition = null; renderGame();
+    gameState.current = { lineup, bench }; gameState.editingSession = false; selectedPosition = null; selectedBenchId = null; renderGame();
   } else { gameState.editingSession = false; loadQuarter(gameState.quarter, false); }
 });
 document.getElementById("editAttendance").addEventListener("click", () => { stopClock(); gameState.live = false; gameState.editingSession = true; renderGame(); });
 document.getElementById("quarterPicker").addEventListener("click", (event) => { const button = event.target.closest("button"); if (!button || Number(button.dataset.quarter) === gameState.quarter) return; loadQuarter(Number(button.dataset.quarter)); });
 document.getElementById("nextRotation").addEventListener("click", () => { if (gameState.quarter < 3) loadQuarter(gameState.quarter + 1); });
-document.getElementById("formation").addEventListener("click", (event) => { const button = event.target.closest("[data-position]"); if (!button) return; const position = Number(button.dataset.position); selectedPosition = selectedPosition === position ? null : position; renderLive(); });
-document.getElementById("benchGrid").addEventListener("click", (event) => {
-  const button = event.target.closest("[data-bench-id]"); if (!button || selectedPosition === null) return;
+function makeSubstitution(positionIndex, incoming) {
   settleClock(); renderClock();
-  const lineup = currentLineup(); const bench = currentBench(); const incoming = button.dataset.benchId; const outgoing = lineup[selectedPosition];
-  lineup[selectedPosition] = incoming; const nextBench = bench.filter((id) => id !== incoming); if (outgoing) nextBench.push(outgoing);
+  const lineup = currentLineup(); const bench = currentBench(); const outgoing = lineup[positionIndex];
+  lineup[positionIndex] = incoming; const nextBench = bench.filter((id) => id !== incoming); if (outgoing) nextBench.push(outgoing);
   gameState.current = { lineup, bench: nextBench };
   const clock = clockText();
-  const position = activeFormation().positions[selectedPosition].label;
+  const position = activeFormation().positions[positionIndex].label;
   const outgoingTotalSeconds = outgoing ? gameState.playingSeconds[outgoing] || 0 : null;
   gameState.log.unshift({ id: crypto.randomUUID?.() || `${Date.now()}-${incoming}`, type: "substitution", at: Date.now(), quarter: gameState.quarter, elapsedQuarterSeconds: 720 - gameState.seconds, remainingSeconds: gameState.seconds, clock, position, incoming, outgoing, outgoingTotalSeconds, time: `Q${gameState.quarter + 1} · ${clock}`, text: outgoing ? `${playerName(incoming)} in for ${playerName(outgoing)} at ${position} · ${playerName(outgoing)} total ${formatDuration(outgoingTotalSeconds)}` : `${playerName(incoming)} filled the open ${position} spot` });
-  selectedPosition = null; renderLive();
+  selectedPosition = null; selectedBenchId = null; renderLive();
+}
+document.getElementById("formation").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-position]"); if (!button) return;
+  const position = Number(button.dataset.position);
+  if (selectedBenchId) { makeSubstitution(position, selectedBenchId); return; }
+  selectedPosition = selectedPosition === position ? null : position; renderLive();
+});
+document.getElementById("benchGrid").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-bench-id]"); if (!button) return;
+  const incoming = button.dataset.benchId;
+  if (selectedPosition !== null) { makeSubstitution(selectedPosition, incoming); return; }
+  selectedBenchId = selectedBenchId === incoming ? null : incoming; renderLive();
 });
 document.getElementById("clockButton").addEventListener("click", () => {
   if (gameState.seconds === 0) { gameState.seconds = 720; renderClock(); saveGame(); return; }
   if (clockRunning) stopClock(); else startClock();
 });
 document.getElementById("clearLog").addEventListener("click", () => { gameState.log = []; renderLive(); });
-document.getElementById("resetGame").addEventListener("click", () => { if (!confirm("Start a completely new game? This clears attendance, clock, lineups, playing-time totals, and the game log on this device.")) return; stopClock(); gameState = defaultGameState(); selectedPosition = null; renderGame(); });
+document.getElementById("resetGame").addEventListener("click", () => { if (!confirm("Start a completely new game? This clears attendance, clock, lineups, playing-time totals, and the game log on this device.")) return; stopClock(); gameState = defaultGameState(); selectedPosition = null; selectedBenchId = null; renderGame(); });
 
 const playerDialog = document.getElementById("playerDialog");
 document.querySelectorAll(".add-player-trigger").forEach((button) => button.addEventListener("click", () => { document.getElementById("newPlayerName").value = ""; document.getElementById("newPlayerRole").value = ""; playerDialog.showModal(); setTimeout(() => document.getElementById("newPlayerName").focus(), 50); }));

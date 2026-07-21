@@ -10,7 +10,7 @@
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
     <script>document.documentElement.dataset.theme = localStorage.getItem("comets-theme") || "night";</script>
-    <link rel="stylesheet" href="styles.css?v=11" />
+    <link rel="stylesheet" href="styles.css?v=12" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
   </head>
@@ -182,11 +182,11 @@
             <button class="clock-button" id="clockButton" type="button">Start</button>
           </div>
           <button class="next-rotation-button" id="nextRotation" type="button"><span>Load next rotation</span><strong>Quarter 2 →</strong></button>
-          <div class="swap-instruction" id="swapInstruction">Tap a player on the field, then tap a bench player to swap.</div>
+          <div class="swap-instruction" id="swapInstruction">Choose either direction: tap a field player or a ranked bench player first.</div>
           <section class="playing-time-panel"><div class="panel-title"><div><h2>Playing time</h2><small>Live game totals</small></div><span id="teamTimeStatus">Clock paused</span></div><div class="playing-time-grid" id="playingTimeGrid"></div></section>
           <div class="lineup-layout">
             <section class="lineup-panel"><div class="panel-title"><h2>On the field</h2><span id="fieldCount">7 players</span></div><div class="time-color-key" aria-label="Playing time color key"><span><i class="fresh"></i>Fresh</span><span><i class="mid"></i>Mid-quarter</span><span><i class="due"></i>Rotation due</span></div><div class="formation" id="formation"></div></section>
-            <section class="bench-panel"><div class="panel-title"><h2>Bench</h2><span id="benchCount"></span></div><div class="bench-grid" id="benchGrid"></div></section>
+            <section class="bench-panel"><div class="panel-title"><div><h2>Bench order</h2><small>Role fit + least playing time</small></div><span id="benchCount"></span></div><div class="bench-grid" id="benchGrid"></div></section>
           </div>
           <section class="sub-log"><div class="panel-title"><h2>Game log</h2><button id="clearLog" type="button">Clear</button></div><ol id="subLog"></ol></section>
         </section>
@@ -216,6 +216,6 @@
     </dialog>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=12"></script>
+    <script src="app.js?v=13"></script>
   </body>
 </html>
