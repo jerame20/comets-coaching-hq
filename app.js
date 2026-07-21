@@ -22,11 +22,14 @@ function showView() {
     tab.classList.toggle("active", active);
     active ? tab.setAttribute("aria-current", "page") : tab.removeAttribute("aria-current");
   });
-  window.scrollTo({ top: 0, behavior: "instant" });
   const activeView = views.find((view) => view.dataset.view === current);
   document.title = current === "home" ? "Comets Coaching HQ" : `${activeView.dataset.title} · Comets Coaching HQ`;
+  document.body.classList.toggle("gameday-view", current === "gameday");
+  document.body.classList.toggle("live-gameday", current === "gameday" && !document.getElementById("liveGame")?.hidden);
+  requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" })));
 }
 window.addEventListener("hashchange", showView);
+window.addEventListener("load", () => setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 0));
 showView();
 
 const themeButton = document.getElementById("themeButton");
@@ -318,6 +321,7 @@ function renderLive() {
 function renderGame() {
   setupScreen.hidden = gameState.live;
   liveScreen.hidden = !gameState.live;
+  document.body.classList.toggle("live-gameday", location.hash.slice(1) === "gameday" && gameState.live);
   if (gameState.live) renderLive(); else renderAttendance();
 }
 function releaseWakeLock() { wakeLock?.release().catch(() => {}); wakeLock = null; }

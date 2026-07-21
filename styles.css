@@ -531,6 +531,41 @@ html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
   .form-actions { display: grid; }
   .saved-notes article { display: block; }
   .saved-notes article > div + div { margin-top: 10px; }
+
+  /* Sideline mode: one-handed, glanceable, and stripped to game-critical controls. */
+  body.gameday-view .site-header { display: none; }
+  body.gameday-view .tab-bar { top: 0; min-height: 60px; justify-content: center; padding: 8px 12px; }
+  body.gameday-view .tab-bar a:not(.gameday-tab):not([data-tab="home"]) { display: none; }
+  body.gameday-view .tab-bar .gameday-tab { flex: 1 1 auto; max-width: 230px; min-height: 46px; font-size: 16px; }
+  body.gameday-view .tab-bar [data-tab="home"] { min-height: 46px; }
+  body.gameday-view .game-app { padding: 18px 12px 40px; }
+  body.gameday-view footer { display: none; }
+  body.live-gameday .game-app-head { display: none; }
+  body.live-gameday .live-game { display: flex; flex-direction: column; }
+  body.live-gameday .live-status { order: 1; margin: 0 0 8px; padding: 10px 12px; }
+  body.live-gameday .live-status strong { font-size: 17px; }
+  body.live-gameday .live-status > div > span { display: none; }
+  body.live-gameday .live-status button { min-height: 50px; padding: 0 16px; font-size: 13px; }
+  body.live-gameday .quarter-picker { order: 2; margin: 0 0 8px; }
+  body.live-gameday .quarter-picker button { min-height: 54px; font-size: 15px; }
+  body.live-gameday .game-clock { order: 3; top: 68px; min-height: 92px; margin: 0 0 10px; padding: 12px 14px; }
+  body.live-gameday .game-clock strong { font-size: 50px; }
+  body.live-gameday .clock-button { min-width: 122px; min-height: 66px; font-size: 19px; }
+  body.live-gameday .swap-instruction { order: 4; min-height: 54px; margin: 0 0 10px; padding: 10px 13px; display: grid; place-items: center; font-size: 15px; line-height: 1.25; }
+  body.live-gameday .lineup-layout { order: 5; gap: 10px; }
+  body.live-gameday .lineup-panel,
+  body.live-gameday .bench-panel { border-radius: 16px; padding: 11px; }
+  body.live-gameday .formation { min-height: 350px; }
+  body.live-gameday .field-player { width: 72px; border-width: 4px; }
+  body.live-gameday .field-player .field-name { font-size: 13px; }
+  body.live-gameday .field-player .field-time { font-size: 10px; }
+  body.live-gameday .bench-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+  body.live-gameday .bench-grid button { min-height: 88px; border-width: 2px; }
+  body.live-gameday .bench-grid button strong { font-size: 17px; }
+  body.live-gameday .bench-grid button small { font-size: 11px; }
+  body.live-gameday .playing-time-panel { order: 6; margin-top: 10px; border-radius: 16px; padding: 12px; }
+  body.live-gameday .next-rotation-button { order: 7; min-height: 72px; margin: 10px 0 0; font-size: 16px; }
+  body.live-gameday .sub-log { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
