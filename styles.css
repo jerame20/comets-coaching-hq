@@ -262,7 +262,7 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 .clock-button { min-width: 118px; min-height: 60px; border: 0; border-radius: 15px; background: var(--lime); color: var(--green); font: inherit; font-size: 17px; font-weight: 900; cursor: pointer; }
 .swap-instruction { margin: 12px 0; padding: 12px 15px; border-radius: 12px; background: #fff6dd; color: #755512; font-size: 13px; font-weight: 800; text-align: center; }
 .lineup-layout { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(280px,.7fr); gap: 14px; }
-.lineup-panel, .bench-panel, .attendance-panel, .sub-log, .feedback-form, .saved-notes { border: 1px solid var(--line); border-radius: 20px; background: var(--card); box-shadow: 0 6px 22px rgba(20,47,35,.05); }
+.lineup-panel, .bench-panel, .attendance-panel, .playing-time-panel, .sub-log, .feedback-form, .saved-notes { border: 1px solid var(--line); border-radius: 20px; background: var(--card); box-shadow: 0 6px 22px rgba(20,47,35,.05); }
 .lineup-panel, .bench-panel { padding: 16px; }
 .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
 .panel-title h2 { margin: 0; font-size: 17px; }
@@ -290,6 +290,19 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 .attendance-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 7px; }
 .attendance-grid button { min-height: 46px; border: 1px solid var(--line); border-radius: 10px; background: #eef3ec; color: var(--green); font: inherit; font-size: 12px; font-weight: 850; cursor: pointer; }
 .attendance-grid button.absent { border-color: var(--coral); background: #fff0ec; color: #a83827; text-decoration: line-through; }
+.playing-time-panel { margin-top: 14px; padding: 16px; }
+.playing-time-panel + .lineup-layout { margin-top: 14px; }
+.playing-time-panel .panel-title > div small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 750; }
+.playing-time-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.time-card { min-height: 74px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f3f4ef; }
+.time-card > div { min-width: 0; }
+.time-card strong, .time-card span, .time-card small { display: block; }
+.time-card strong { overflow: hidden; text-overflow: ellipsis; font-size: 14px; white-space: nowrap; }
+.time-card span { margin-top: 3px; color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.time-card > b { flex: 0 0 auto; font-variant-numeric: tabular-nums; font-size: 19px; letter-spacing: -.03em; }
+.time-card.on-field { border-color: #9ac4a7; background: #e4f3e8; }
+.time-card.on-field span { color: #28734d; }
+.time-card.on-field > b { color: var(--green); }
 .sub-log { margin-top: 14px; padding: 16px; }
 .sub-log ol { margin: 0; padding: 0; list-style: none; }
 .sub-log li { padding: 11px 4px; border-top: 1px solid var(--line); font-size: 13px; }
@@ -389,6 +402,9 @@ footer span:first-child { color: var(--green); font-weight: 850; }
   .field-player strong { font-size: 14px; }
   .bench-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
   .bench-grid button { min-height: 72px; font-size: 14px; }
+  .playing-time-grid { display: flex; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; scrollbar-width: none; }
+  .playing-time-grid::-webkit-scrollbar { display: none; }
+  .time-card { flex: 0 0 145px; min-height: 72px; scroll-snap-align: start; }
   .attendance-grid { grid-template-columns: repeat(3,1fr); }
   .form-row { grid-template-columns: 1fr; }
   .form-row label + label { margin-top: 3px; }

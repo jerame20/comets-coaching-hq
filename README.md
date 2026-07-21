@@ -18,6 +18,8 @@ A dependency-free, mobile-first coaching app for the Comets roster, rotations, p
 - Six games and four attendance-aware planned quarters per game
 - Large 2-3-1 field controls and bench buttons
 - Tap field player, then bench player, to record a substitution
+- Mid-quarter substitutions settle the game clock instantly and preserve structured in/out timestamps
+- Live per-player playing-time totals persist across quarters, refreshes, pauses, and brief screen locks
 - One-tap next-quarter rotation loading and open-position handling
 - 12-minute quarter clock, screen wake lock when available, vibration at zero, and substitution log
 - Local persistence and service-worker caching for refresh/offline resilience
