@@ -1,6 +1,15 @@
 {
-  "updatedAt": "7/21/2026 13:25:33",
+  "updatedAt": "7/21/2026 13:26:59",
   "posts": [
+    {
+      "id": "post-46968c74-0d05-4f9b-90b0-e45ccbaae94d",
+      "author": "Bryan",
+      "title": "Improve mobile app width and responsiveness",
+      "category": "App idea",
+      "body": "Sometimes on mobile screens, the app is zoomed in just a little too much and has a slight amount of horizontal scroll.",
+      "created": "7/21/2026 13:26:59",
+      "comments": []
+    },
     {
       "id": "post-48ec8bed-2e43-4dc9-80ec-1cd7c33f1705",
       "author": "Bryan",
