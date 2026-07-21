@@ -15,7 +15,7 @@ const views = [...document.querySelectorAll("[data-view]")];
 const tabs = [...document.querySelectorAll("[data-tab]")];
 function showView() {
   const requested = location.hash.slice(1);
-  const current = views.some((view) => view.dataset.view === requested) ? requested : "home";
+  const current = views.some((view) => view.dataset.view === requested) ? requested : "gameday";
   views.forEach((view) => view.classList.toggle("active", view.dataset.view === current));
   tabs.forEach((tab) => {
     const active = tab.dataset.tab === current;
@@ -28,6 +28,21 @@ function showView() {
 }
 window.addEventListener("hashchange", showView);
 showView();
+
+const themeButton = document.getElementById("themeButton");
+function renderThemeButton() {
+  const night = document.documentElement.dataset.theme === "night";
+  themeButton.innerHTML = `<span aria-hidden="true">${night ? "☀" : "☾"}</span><b>${night ? "Day" : "Night"}</b>`;
+  themeButton.setAttribute("aria-label", `Switch to ${night ? "day" : "night"} mode`);
+  document.querySelector('meta[name="theme-color"]').content = night ? "#080b12" : "#1557c0";
+}
+themeButton.addEventListener("click", () => {
+  const next = document.documentElement.dataset.theme === "night" ? "day" : "night";
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem("comets-theme", next);
+  renderThemeButton();
+});
+renderThemeButton();
 
 const toast = document.getElementById("toast");
 let toastTimer;

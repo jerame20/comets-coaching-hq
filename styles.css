@@ -37,6 +37,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 
 .brand { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+.comet-mark { width: 66px; height: 44px; overflow: visible; }
+.comet-trail { fill: none; stroke: #4da3ff; stroke-width: 6; stroke-linecap: round; opacity: .65; }
+.comet-trail.trail-wide { stroke-width: 12; opacity: .24; }
+.comet-mark g circle { fill: #05070b; stroke: #4da3ff; stroke-width: 3; }
+.comet-mark g path { fill: #eef6ff; stroke: #05070b; stroke-width: 1.5; stroke-linejoin: round; }
 .brand-mark {
   width: 38px; height: 38px; display: grid; place-items: center; border: 2px solid var(--lime);
   border-radius: 50%; color: var(--lime); font-size: 21px; font-weight: 900; font-style: italic;
@@ -52,6 +57,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 .share-button:hover { background: rgba(255,255,255,.15); transform: translateY(-1px); }
 .share-button svg { width: 17px; fill: currentColor; }
+.header-actions { display: flex; align-items: center; gap: 7px; }
+.theme-button {
+  min-height: 44px; padding: 0 13px; border: 1px solid rgba(255,255,255,.22); border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,.08); color: white;
+  font: inherit; cursor: pointer;
+}
+.theme-button span { font-size: 17px; line-height: 1; }
+.theme-button b { font-size: 12px; }
 
 .tab-bar {
   position: sticky; top: 0; z-index: 20; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
@@ -66,20 +79,31 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 .tab-bar a:hover { color: var(--green); background: #eaf1fb; }
 .tab-bar a.active { color: white; background: var(--green); }
+.tab-bar .gameday-tab { padding-inline: 18px; background: #1557c0; color: white; box-shadow: 0 5px 14px rgba(21,87,192,.22); }
+.tab-bar .gameday-tab:hover, .tab-bar .gameday-tab.active { background: #0f71e8; color: white; }
+.live-dot { width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: #7bffbc; box-shadow: 0 0 0 4px rgba(123,255,188,.15); }
 
 main { min-height: calc(100vh - 190px); }
 .view { display: none; }
 .view.active { display: block; animation: enter 280ms ease-out both; }
 @keyframes enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
-#home { max-width: 1180px; margin: 0 auto; padding: clamp(38px, 7vw, 82px) clamp(18px, 4vw, 42px) 54px; }
-.hero { max-width: 850px; }
+#home { max-width: 1180px; margin: 0 auto; padding: clamp(38px, 7vw, 82px) clamp(18px, 4vw, 42px) 54px; overflow: clip; }
+.hero { position: relative; max-width: 850px; }
 .eyebrow { display: flex; align-items: center; gap: 9px; color: var(--green-2); font-size: 12px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
 .eyebrow span { width: 24px; height: 3px; border-radius: 3px; background: var(--coral); }
 h1 { margin: 14px 0 18px; font-size: clamp(43px, 8vw, 85px); line-height: .96; letter-spacing: -.055em; }
 h1 em { color: var(--green-2); font-family: Georgia, serif; font-weight: 500; }
 .hero > p { max-width: 650px; margin: 0; color: var(--muted); font-size: clamp(17px, 2vw, 21px); line-height: 1.55; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.gameday-launch { min-height: 58px; padding-inline: 24px; background: #1557c0 !important; border-color: #1557c0 !important; box-shadow: 0 10px 26px rgba(21,87,192,.22); }
+.gameday-launch span { margin-right: 8px; font-size: 19px; }
+.hero-comets { position: absolute; top: -38px; right: 6px; width: 220px; height: 180px; pointer-events: none; opacity: .42; }
+.hero-comets i { position: absolute; width: 28px; height: 28px; border: 4px solid #4da3ff; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #fff 0 8%, #080b12 9% 30%, #fff 31% 37%, #080b12 38%); box-shadow: 0 6px 18px rgba(21,87,192,.28); transform: rotate(-24deg); }
+.hero-comets i::before { content: ""; position: absolute; z-index: -1; right: 20px; top: 5px; width: 92px; height: 11px; border-radius: 100% 0 0 100%; background: linear-gradient(90deg, transparent, rgba(77,163,255,.18), #4da3ff); transform: skewX(-24deg); transform-origin: right center; }
+.hero-comets i:nth-child(1) { right: 8px; top: 5px; transform: scale(1.25) rotate(-24deg); }
+.hero-comets i:nth-child(2) { right: 66px; top: 78px; transform: scale(.8) rotate(-18deg); opacity: .7; }
+.hero-comets i:nth-child(3) { right: 4px; top: 137px; transform: scale(.55) rotate(-30deg); opacity: .45; }
 .button {
   min-height: 51px; padding: 0 20px; border: 1px solid var(--green); border-radius: 999px; display: inline-flex;
   align-items: center; justify-content: center; text-decoration: none; font-size: 14px; font-weight: 850; transition: 170ms ease;
@@ -362,12 +386,79 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 .dictation-button.listening { background: var(--coral); color: #2d1712; animation: mic-pulse 1.2s ease-in-out infinite; }
 @keyframes mic-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,118,95,.35); } 50% { box-shadow: 0 0 0 7px rgba(255,118,95,.08); } }
 
+/* Night is the default sideline skin. Day mode remains one tap away. */
+html[data-theme="night"] { color-scheme: dark; --ink: #f3f7ff; --muted: #9eacc3; --paper: #070b13; --card: #111827; --line: #29354a; --shadow: 0 18px 45px rgba(0,0,0,.28); }
+html[data-theme="night"] body { background: radial-gradient(circle at 80% -10%, rgba(21,87,192,.2), transparent 34%), var(--paper); color: var(--ink); }
+html[data-theme="night"] .tab-bar { background: rgba(8,13,23,.92); }
+html[data-theme="night"] .tab-bar a { color: #a9b6ca; }
+html[data-theme="night"] .tab-bar a:not(.gameday-tab):hover { color: white; background: #1b2638; }
+html[data-theme="night"] .tab-bar a:not(.gameday-tab).active { background: #26354c; color: white; }
+html[data-theme="night"] .button.primary,
+html[data-theme="night"] .attendance-toolbar .add-player-trigger,
+html[data-theme="night"] .setup-step > span,
+html[data-theme="night"] .player-card > span,
+html[data-theme="night"] .rotation-card header span,
+html[data-theme="night"] .role-card > span { background: #1557c0; color: white; }
+html[data-theme="night"] .button.secondary { border-color: #6681a8; color: #e9f2ff; }
+html[data-theme="night"] .team-reference,
+html[data-theme="night"] .quick-card,
+html[data-theme="night"] .privacy-note { background: rgba(17,24,39,.9); border-color: var(--line); }
+html[data-theme="night"] .quick-card small,
+html[data-theme="night"] .mini-bench p,
+html[data-theme="night"] .saved-notes article p { color: var(--muted); }
+html[data-theme="night"] .card-icon { background: #1c2a40; }
+html[data-theme="night"] .player-card dl div,
+html[data-theme="night"] .mini-lineup div,
+html[data-theme="night"] .coverage-positions div,
+html[data-theme="night"] .role-card div,
+html[data-theme="night"] .bench-grid button,
+html[data-theme="night"] .attendance-grid button,
+html[data-theme="night"] .time-card,
+html[data-theme="night"] .saved-notes article button,
+html[data-theme="night"] .dialog-head button,
+html[data-theme="night"] .dictation-button { background: #1a2639; color: #eaf2ff; }
+html[data-theme="night"] .role-card div.avoid,
+html[data-theme="night"] .attendance-grid button.absent,
+html[data-theme="night"] .saved-notes article button + button,
+html[data-theme="night"] .remove-player { background: #382028; color: #ffaaa0; }
+html[data-theme="night"] .match-setup-card select,
+html[data-theme="night"] .choice-pills button,
+html[data-theme="night"] .live-status button,
+html[data-theme="night"] .game-controls select,
+html[data-theme="night"] .feedback-form input,
+html[data-theme="night"] .feedback-form select,
+html[data-theme="night"] .feedback-form textarea,
+html[data-theme="night"] .player-dialog input,
+html[data-theme="night"] .player-dialog select { background: #0d1422; color: #f3f7ff; border-color: var(--line); }
+html[data-theme="night"] .choice-pills button { color: #d8e8ff; }
+html[data-theme="night"] .choice-pills button.active { background: #1557c0; border-color: #4da3ff; color: white; }
+html[data-theme="night"] .attendance-grid-large button.present,
+html[data-theme="night"] .starter-preview div,
+html[data-theme="night"] .time-card.on-field { background: #122b50; border-color: #2d72cf; color: white; }
+html[data-theme="night"] .starter-preview .open { background: #352126; color: #ffb2a8; border-color: #8e4c45; }
+html[data-theme="night"] .swap-instruction { background: #352d18; color: #ffe09b; }
+html[data-theme="night"] .next-rotation-button,
+html[data-theme="night"] .start-game-button { background: #1976e8; color: white; box-shadow: 0 10px 26px rgba(25,118,232,.25); }
+html[data-theme="night"] .next-rotation-button:disabled { background: #202938; color: #7e8ba0; }
+html[data-theme="night"] .game-clock { border: 1px solid #29466f; background: linear-gradient(135deg,#0b1424,#101f35); box-shadow: 0 14px 35px rgba(0,0,0,.34); }
+html[data-theme="night"] .clock-button { background: #4da3ff; color: #06101f; }
+html[data-theme="night"] footer span:first-child,
+html[data-theme="night"] .feedback-form label,
+html[data-theme="night"] .player-dialog label { color: #eaf2ff; }
+html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
+
 @media (max-width: 720px) {
   .site-header { height: 64px; }
   .share-button span { display: none; }
   .share-button { width: 44px; padding: 0; justify-content: center; }
+  .theme-button { width: 44px; padding: 0; justify-content: center; }
+  .theme-button b { display: none; }
+  .comet-mark { width: 57px; }
+  .brand { gap: 6px; }
+  .brand small { display: none; }
   #home { padding-top: 38px; }
   .hero-actions { display: grid; }
+  .hero-comets { right: -28px; top: -48px; transform: scale(.65); opacity: .24; }
   .field-card { min-height: 190px; margin: 44px 0; }
   .field-copy { min-height: 190px; padding: 26px 20px; }
   .field-copy strong { max-width: 100%; font-size: 26px; line-height: 1.05; }

@@ -9,32 +9,40 @@
     <meta name="robots" content="noindex, nofollow" />
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
-    <link rel="stylesheet" href="styles.css?v=10" />
+    <script>document.documentElement.dataset.theme = localStorage.getItem("comets-theme") || "night";</script>
+    <link rel="stylesheet" href="styles.css?v=11" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="#home" aria-label="Comets Coaching HQ home">
-        <span class="brand-mark" aria-hidden="true">C</span>
+        <svg class="comet-mark" aria-hidden="true" viewBox="0 0 110 54">
+          <path class="comet-trail trail-wide" d="M4 41C25 29 43 20 68 18"/>
+          <path class="comet-trail" d="M12 49C33 38 48 31 71 27"/>
+          <g transform="translate(78 24)"><circle r="20"/><path d="m0-15 9 7-3 11H-6L-9-8Z M9-8l8 1 2 10-8 5-5-5M11 8l-5 9H-5l-5-9 4-5H6M-10 8l-8-5 2-10 7-1 3 11M-9-8l9-7 9 7-9 5Z"/></g>
+        </svg>
         <span>
           <strong>Comets</strong>
           <small>Coaching HQ</small>
         </span>
       </a>
-      <button class="share-button" id="shareButton" type="button" aria-label="Share this coaching hub">
-        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 8a3 3 0 1 0-2.83-4 3 3 0 0 0 .13 1l-6.1 3.05a3 3 0 1 0 0 3.9L15.3 15a3 3 0 1 0 .9-1.8l-6.1-3.05a3.2 3.2 0 0 0 0-.3L16.2 6.8A3 3 0 0 0 18 8Z"/></svg>
-        <span>Share</span>
-      </button>
+      <div class="header-actions">
+        <button class="theme-button" id="themeButton" type="button" aria-label="Switch to day mode" title="Switch appearance"><span aria-hidden="true">☀</span><b>Day</b></button>
+        <button class="share-button" id="shareButton" type="button" aria-label="Share this coaching hub">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 8a3 3 0 1 0-2.83-4 3 3 0 0 0 .13 1l-6.1 3.05a3 3 0 1 0 0 3.9L15.3 15a3 3 0 1 0 .9-1.8l-6.1-3.05a3.2 3.2 0 0 0 0-.3L16.2 6.8A3 3 0 0 0 18 8Z"/></svg>
+          <span>Share</span>
+        </button>
+      </div>
     </header>
 
     <nav class="tab-bar" aria-label="Coaching sections">
+      <a class="gameday-tab" href="#gameday" data-tab="gameday"><span class="live-dot"></span>Game Day</a>
       <a href="#home" data-tab="home">Home</a>
       <a href="#players" data-tab="players">Players</a>
       <a href="#rotation" data-tab="rotation">Rotation</a>
       <a href="#season" data-tab="season">Coverage</a>
       <a href="#roles" data-tab="roles">Roles</a>
-      <a href="#gameday" data-tab="gameday">Game day</a>
       <a href="#feedback" data-tab="feedback">Coach note</a>
     </nav>
 
@@ -45,9 +53,11 @@
           <h1>One place to plan.<br /><em>One team to develop.</em></h1>
           <p>Open the live planner, prep the next game, and keep every player moving forward.</p>
           <div class="hero-actions">
-            <a class="button primary" href="#rotation">Open game rotation</a>
+            <a class="button primary gameday-launch" href="#gameday"><span>⚽</span> Launch Game Day</a>
+            <a class="button secondary" href="#rotation">View planned rotations</a>
             <a class="button secondary" href="https://docs.google.com/spreadsheets/d/1sG31dZoLYUNhUNntRkz9Qfbzh6aleKdKUHYZkxN5puQ/edit" target="_blank" rel="noopener">Open full Google Sheet</a>
           </div>
+          <div class="hero-comets" aria-hidden="true"><i></i><i></i><i></i></div>
         </div>
 
         <div class="field-card" aria-hidden="true">
@@ -206,6 +216,6 @@
     </dialog>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=11"></script>
+    <script src="app.js?v=12"></script>
   </body>
 </html>
