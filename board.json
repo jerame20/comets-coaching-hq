@@ -1,6 +1,15 @@
 {
-  "updatedAt": "7/21/2026 11:53:28",
+  "updatedAt": "7/21/2026 13:25:33",
   "posts": [
+    {
+      "id": "post-48ec8bed-2e43-4dc9-80ec-1cd7c33f1705",
+      "author": "Bryan",
+      "title": "Top nav improvement",
+      "category": "App idea",
+      "body": "When the app loads right now, you can’t see the full top nav until you click the other link that shows up.",
+      "created": "7/21/2026 13:25:33",
+      "comments": []
+    },
     {
       "id": "post-2f7073a4-5a2b-473a-951e-744aca94e044",
       "author": "Jeremy",
