@@ -10,7 +10,7 @@
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
     <script>document.documentElement.dataset.theme = localStorage.getItem("comets-theme") || "night";</script>
-    <link rel="stylesheet" href="styles.css?v=13" />
+    <link rel="stylesheet" href="styles.css?v=14" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
   </head>
@@ -129,7 +129,7 @@
       </section>
 
       <section class="view data-view" id="players" data-view="players" data-title="Players">
-        <div class="page-head roster-head"><div><span>Roster</span><h1>Player rotation map</h1><p>Neutral planning information from the live workbook. Detailed coach observations stay in the private Sheet.</p></div><button class="button primary add-player-trigger" type="button">+ Add player</button></div>
+        <div class="page-head roster-head"><div><span>Roster</span><h1>Players</h1><p>Edit each player’s preferred positions, preferred foot, and current development focus. Preferred positions guide recommendations; they do not stop anyone from rotating and learning every role.</p></div><button class="button primary add-player-trigger" type="button">+ Add player</button></div>
         <div class="player-grid" id="playerGrid"></div>
       </section>
 
@@ -207,15 +207,17 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <dialog class="player-dialog" id="playerDialog">
       <form method="dialog" id="playerForm">
-        <div class="dialog-head"><div><small>Roster</small><h2>Add a player</h2></div><button id="closePlayerDialog" type="button" aria-label="Close">×</button></div>
+        <div class="dialog-head"><div><small>Roster</small><h2 id="playerDialogTitle">Add a player</h2></div><button id="closePlayerDialog" type="button" aria-label="Close">×</button></div>
         <label>Player name<input id="newPlayerName" autocomplete="off" maxlength="30" required placeholder="First name"></label>
-        <label>Best starting role<select id="newPlayerRole"><option value="">No preference yet</option><option>GK</option><option>LD</option><option>RD</option><option>LM</option><option>CM</option><option>RM</option><option>ST</option></select></label>
-        <button class="button primary" value="default" type="submit">Add to roster</button>
-        <p>Saved only on this device. They’ll be available for attendance and substitutions.</p>
+        <label>Preferred positions<input id="newPlayerPositions" autocomplete="off" maxlength="40" placeholder="Example: CM / ST / RD"></label>
+        <label>Preferred foot<select id="newPlayerFoot"><option>Not noted</option><option>Right</option><option>Left</option><option>Both</option></select></label>
+        <label>Development focus<textarea id="newPlayerFocus" rows="3" maxlength="180" placeholder="What are we helping this player work on?"></textarea></label>
+        <button class="button primary" id="savePlayerButton" value="default" type="submit">Add to roster</button>
+        <p>Changes save on this device and immediately affect Game Day recommendations.</p>
       </form>
     </dialog>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=14"></script>
+    <script src="app.js?v=15"></script>
   </body>
 </html>

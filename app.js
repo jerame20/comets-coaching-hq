@@ -3,12 +3,15 @@ const SHEET = "https://docs.google.com/spreadsheets/d/1sG31dZoLYUNhUNntRkz9Qfbzh
 const escapeHTML = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const ROSTER_KEY = "comets-roster-v1";
-const seedPlayers = DATA.players.map(([name, foot, anchors, emphasis]) => ({ id: `seed-${slug(name)}`, name, foot, anchors, emphasis, custom: false }));
+const PLAYER_OVERRIDES_KEY = "comets-player-overrides-v1";
+const seedPlayers = DATA.players.map(([name, foot, anchors, emphasis]) => ({ id: `seed-${slug(name)}`, sourceName: name, name, foot, anchors, emphasis, custom: false }));
 let customPlayers;
+let playerOverrides;
 try { customPlayers = JSON.parse(localStorage.getItem(ROSTER_KEY) || "[]"); } catch { customPlayers = []; }
-const allPlayers = () => [...seedPlayers, ...customPlayers.filter((player) => !player.archived)];
+try { playerOverrides = JSON.parse(localStorage.getItem(PLAYER_OVERRIDES_KEY) || "{}"); } catch { playerOverrides = {}; }
+const allPlayers = () => [...seedPlayers.map((player) => ({ ...player, ...(playerOverrides[player.id] || {}) })), ...customPlayers].filter((player) => !player.archived);
 const playerById = (id) => allPlayers().find((player) => player.id === id);
-const idForName = (name) => allPlayers().find((player) => player.name === name)?.id;
+const idForName = (name) => allPlayers().find((player) => player.name === name || player.sourceName === name)?.id;
 const playerName = (id) => playerById(id)?.name || "Unknown";
 
 const views = [...document.querySelectorAll("[data-view]")];
@@ -131,17 +134,20 @@ renderTeamPhoto();
 
 function renderRoster() {
   document.getElementById("playerGrid").innerHTML = allPlayers().map((player) => `
-    <article class="player-card ${player.custom ? "custom-player" : ""}"><span>${escapeHTML(player.name.slice(0,1))}</span><div><h2>${escapeHTML(player.name)}</h2><p>${escapeHTML(player.emphasis || "New player · ready to add to today’s rotation")}</p></div><dl><div><dt>Role anchors</dt><dd>${escapeHTML(player.anchors || "Flexible")}</dd></div><div><dt>Preferred foot</dt><dd>${escapeHTML(player.foot || "Not noted")}</dd></div></dl>${player.custom ? `<button class="remove-player" type="button" data-remove-player="${player.id}">Remove</button>` : ""}</article>`).join("");
+    <article class="player-card ${player.custom ? "custom-player" : ""}"><span>${escapeHTML(player.name.slice(0,1))}</span><div><h2>${escapeHTML(player.name)}</h2><p>${escapeHTML(player.emphasis || "No development focus noted yet")}</p></div><div class="player-actions"><button type="button" data-edit-player="${player.id}">Edit</button>${player.custom ? `<button class="remove-player" type="button" data-remove-player="${player.id}">Remove</button>` : ""}</div><dl><div><dt>Preferred positions</dt><dd>${escapeHTML(player.anchors || "Flexible")}</dd></div><div><dt>Preferred foot</dt><dd>${escapeHTML(player.foot || "Not noted")}</dd></div></dl></article>`).join("");
 }
 renderRoster();
 
 document.getElementById("roleGrid").innerHTML = DATA.roles.map(([position, job, cue, mistake]) => `
   <article class="role-card"><span>${position}</span><h2>${job}</h2><div><small>Coaching cue</small><p>${cue}</p></div><div class="avoid"><small>Avoid</small><p>${mistake}</p></div></article>`).join("");
 
-document.getElementById("coverageList").innerHTML = DATA.coverage.map((row) => {
-  const [name, ...values] = row; const quarters = values.pop();
-  return `<article class="coverage-card"><div class="coverage-name"><h2>${name}</h2><span>${quarters} playing quarters</span></div><div class="coverage-positions">${DATA.positions.map((position, index) => `<div><span>${position}</span><strong>${values[index]}</strong></div>`).join("")}</div></article>`;
-}).join("");
+function renderCoverage() {
+  document.getElementById("coverageList").innerHTML = DATA.coverage.map((row) => {
+    const [sourceName, ...values] = row; const quarters = values.pop(); const name = playerName(idForName(sourceName));
+    return `<article class="coverage-card"><div class="coverage-name"><h2>${escapeHTML(name)}</h2><span>${quarters} playing quarters</span></div><div class="coverage-positions">${DATA.positions.map((position, index) => `<div><span>${position}</span><strong>${values[index]}</strong></div>`).join("")}</div></article>`;
+  }).join("");
+}
+renderCoverage();
 
 let rotationGame = 0;
 const rotationPicker = document.getElementById("rotationGamePicker");
@@ -149,7 +155,7 @@ rotationPicker.innerHTML = DATA.games.map((_, index) => `<button type="button" d
 function renderRotation() {
   rotationPicker.querySelectorAll("button").forEach((button) => button.classList.toggle("active", Number(button.dataset.game) === rotationGame));
   document.getElementById("rotationGrid").innerHTML = DATA.games[rotationGame].map((quarter, qIndex) => `
-    <article class="rotation-card"><header><span>Q${qIndex + 1}</span><strong>Planned lineup</strong></header><div class="mini-lineup">${DATA.positions.map((position, index) => `<div><small>${position}</small><b>${quarter[index]}</b></div>`).join("")}</div><div class="mini-bench"><small>Bench</small><p>${quarter.slice(7).join(" · ")}</p></div></article>`).join("");
+    <article class="rotation-card"><header><span>Q${qIndex + 1}</span><strong>Planned lineup</strong></header><div class="mini-lineup">${DATA.positions.map((position, index) => `<div><small>${position}</small><b>${escapeHTML(playerName(idForName(quarter[index])))}</b></div>`).join("")}</div><div class="mini-bench"><small>Bench</small><p>${quarter.slice(7).map((name) => escapeHTML(playerName(idForName(name)))).join(" · ")}</p></div></article>`).join("");
 }
 rotationPicker.addEventListener("click", (event) => { const button = event.target.closest("button"); if (!button) return; rotationGame = Number(button.dataset.game); renderRotation(); });
 renderRotation();
@@ -408,17 +414,50 @@ document.getElementById("clearLog").addEventListener("click", () => { gameState.
 document.getElementById("resetGame").addEventListener("click", () => { if (!confirm("Start a completely new game? This clears attendance, clock, lineups, playing-time totals, and the game log on this device.")) return; stopClock(); gameState = defaultGameState(); selectedPosition = null; selectedBenchId = null; renderGame(); });
 
 const playerDialog = document.getElementById("playerDialog");
-document.querySelectorAll(".add-player-trigger").forEach((button) => button.addEventListener("click", () => { document.getElementById("newPlayerName").value = ""; document.getElementById("newPlayerRole").value = ""; playerDialog.showModal(); setTimeout(() => document.getElementById("newPlayerName").focus(), 50); }));
+let editingPlayerId = null;
+function openPlayerDialog(player = null) {
+  editingPlayerId = player?.id || null;
+  document.getElementById("playerDialogTitle").textContent = player ? "Edit player" : "Add a player";
+  document.getElementById("savePlayerButton").textContent = player ? "Save changes" : "Add to roster";
+  document.getElementById("newPlayerName").value = player?.name || "";
+  document.getElementById("newPlayerPositions").value = player?.anchors === "Flexible" ? "" : player?.anchors || "";
+  document.getElementById("newPlayerFoot").value = ["Right","Left","Both"].includes(player?.foot) ? player.foot : "Not noted";
+  document.getElementById("newPlayerFocus").value = player?.emphasis || "";
+  playerDialog.showModal(); setTimeout(() => document.getElementById("newPlayerName").focus(), 50);
+}
+document.querySelectorAll(".add-player-trigger").forEach((button) => button.addEventListener("click", () => openPlayerDialog()));
 document.getElementById("closePlayerDialog").addEventListener("click", () => playerDialog.close());
 document.getElementById("playerForm").addEventListener("submit", (event) => {
-  event.preventDefault(); const name = document.getElementById("newPlayerName").value.trim(); const role = document.getElementById("newPlayerRole").value;
+  event.preventDefault();
+  const name = document.getElementById("newPlayerName").value.trim();
+  const anchors = document.getElementById("newPlayerPositions").value.trim().toUpperCase().replace(/\s*[,/]\s*/g, " / ") || "Flexible";
+  const foot = document.getElementById("newPlayerFoot").value;
+  const emphasis = document.getElementById("newPlayerFocus").value.trim() || "No development focus noted yet";
   if (!name) return;
-  if (allPlayers().some((player) => player.name.toLowerCase() === name.toLowerCase())) { showToast("That player is already on the roster"); return; }
+  if (allPlayers().some((player) => player.id !== editingPlayerId && player.name.toLowerCase() === name.toLowerCase())) { showToast("That player is already on the roster"); return; }
+  if (editingPlayerId) {
+    const player = playerById(editingPlayerId);
+    if (player?.custom) {
+      customPlayers = customPlayers.map((item) => item.id === editingPlayerId ? { ...item, name, anchors, foot, emphasis } : item);
+      localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers));
+    } else {
+      playerOverrides[editingPlayerId] = { ...(playerOverrides[editingPlayerId] || {}), name, anchors, foot, emphasis };
+      localStorage.setItem(PLAYER_OVERRIDES_KEY, JSON.stringify(playerOverrides));
+    }
+    playerDialog.close(); renderRoster(); renderRotation(); renderCoverage(); renderGame(); showToast(`${name} updated`);
+    return;
+  }
   const id = `custom-${crypto.randomUUID?.() || `${Date.now()}-${slug(name)}`}`;
-  customPlayers.push({ id, name, anchors: role || "Flexible", foot: "Not noted", emphasis: "Added on this device", custom: true });
-  localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers)); gameState.present.push(id); playerDialog.close(); renderRoster(); renderGame(); showToast(`${name} added to the roster`);
+  customPlayers.push({ id, name, anchors, foot, emphasis, custom: true });
+  localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers)); gameState.present.push(id); playerDialog.close(); renderRoster(); renderRotation(); renderCoverage(); renderGame(); showToast(`${name} added to the roster`);
 });
-document.getElementById("playerGrid").addEventListener("click", (event) => { const button = event.target.closest("[data-remove-player]"); if (!button) return; const player = playerById(button.dataset.removePlayer); if (!player || !confirm(`Remove ${player.name} from this device?`)) return; customPlayers = customPlayers.map((item) => item.id === player.id ? { ...item, archived: true } : item); localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers)); gameState.present = gameState.present.filter((id) => id !== player.id); renderRoster(); renderGame(); });
+document.getElementById("playerGrid").addEventListener("click", (event) => {
+  const edit = event.target.closest("[data-edit-player]"); const remove = event.target.closest("[data-remove-player]");
+  if (edit) { const player = playerById(edit.dataset.editPlayer); if (player) openPlayerDialog(player); return; }
+  if (!remove) return; const player = playerById(remove.dataset.removePlayer);
+  if (!player || !confirm(`Remove ${player.name} from this device?`)) return;
+  customPlayers = customPlayers.map((item) => item.id === player.id ? { ...item, archived: true } : item); localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers)); gameState.present = gameState.present.filter((id) => id !== player.id); renderRoster(); renderRotation(); renderCoverage(); renderGame();
+});
 renderGame();
 if (gameState.runningSince && gameState.live && gameState.current) {
   clockRunning = true; settleClock();
