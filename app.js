@@ -582,7 +582,7 @@ function startDictation(field, button) {
   activeRecognition = recognition; activeDictationButton = button;
   try { recognition.start(); } catch { finishDictation(); showToast("Could not start voice dictation"); }
 }
-document.querySelectorAll('input:not([type]), input[type="text"], textarea').forEach((field) => {
+document.querySelectorAll('input:not([type]):not([data-no-dictation]), input[type="text"]:not([data-no-dictation]), textarea:not([data-no-dictation])').forEach((field) => {
   if (field.closest(".dictation-field")) return;
   const wrapper = document.createElement("div"); wrapper.className = `dictation-field ${field.tagName === "TEXTAREA" ? "dictation-area" : ""}`;
   field.parentNode.insertBefore(wrapper, field); wrapper.appendChild(field);
