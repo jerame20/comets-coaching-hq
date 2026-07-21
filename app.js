@@ -501,6 +501,8 @@ document.addEventListener("visibilitychange", () => { if (!gameState.runningSinc
 window.addEventListener("pagehide", () => { settleClock(); saveGame(); });
 
 const NOTES_KEY = "comets-coach-notes-v1";
+const NOTE_FORM_ENDPOINT = "https://docs.google.com/forms/d/e/1FAIpQLSdDXZhL0hgNDblnGi5sHtIT3m2wK_J2MSaViMvOoPjGjJURWw/formResponse";
+const NOTE_FORM_FIELDS = { coach: "entry.1308740030", subject: "entry.600358723", type: "entry.818830017", note: "entry.641937199" };
 let notes;
 try { notes = JSON.parse(localStorage.getItem(NOTES_KEY) || "[]"); } catch { notes = []; }
 function draftText() {
@@ -509,13 +511,28 @@ function draftText() {
   return `COMETS COACH NOTE\nFrom: ${coach}\nType: ${type}${subject ? `\nPlayer/topic: ${subject}` : ""}\n\n${note}`;
 }
 function renderNotes() {
-  document.getElementById("savedCount").textContent = `${notes.length} saved`;
-  document.getElementById("savedNotes").innerHTML = notes.length ? notes.map((note, index) => `<article><div><small>${escapeHTML(note.created)}</small><strong>${escapeHTML(note.type)}${note.subject ? ` · ${escapeHTML(note.subject)}` : ""}</strong><p>${escapeHTML(note.note)}</p></div><div><button type="button" data-share-note="${index}">Share</button><button type="button" data-delete-note="${index}">Delete</button></div></article>`).join("") : `<p class="empty-state">No saved notes yet.</p>`;
+  const sentCount = notes.filter((note) => note.delivered).length;
+  document.getElementById("savedCount").textContent = `${notes.length} saved · ${sentCount} sent`;
+  document.getElementById("savedNotes").innerHTML = notes.length ? notes.map((note, index) => `<article><div><small>${escapeHTML(note.created)}</small><strong>${escapeHTML(note.type)}${note.subject ? ` · ${escapeHTML(note.subject)}` : ""}</strong><small class="delivery-status ${note.delivered ? "sent" : ""}">${note.delivered ? "Sent to Darwin" : "Saved locally — not sent"}</small><p>${escapeHTML(note.note)}</p></div><div>${note.delivered ? "" : `<button type="button" data-send-note="${index}">Retry</button>`}<button type="button" data-share-note="${index}">Share</button><button type="button" data-delete-note="${index}">Delete</button></div></article>`).join("") : `<p class="empty-state">No saved notes yet.</p>`;
   localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
 }
-document.getElementById("feedbackForm").addEventListener("submit", (event) => { event.preventDefault(); const text = draftText(); if (!text) return; const coach = document.getElementById("coachName"); const type = document.getElementById("noteType"); const subject = document.getElementById("noteSubject"); const note = document.getElementById("noteText"); notes.unshift({ coach: coach.value.trim(), type: type.value, subject: subject.value.trim(), note: note.value.trim(), created: new Date().toLocaleString() }); subject.value = ""; note.value = ""; renderNotes(); showToast("Note saved on this device"); });
+async function sendCoachNote(note) {
+  const body = new URLSearchParams({ [NOTE_FORM_FIELDS.coach]: note.coach, [NOTE_FORM_FIELDS.subject]: note.subject, [NOTE_FORM_FIELDS.type]: note.type, [NOTE_FORM_FIELDS.note]: note.note, submit: "Submit" });
+  await fetch(NOTE_FORM_ENDPOINT, { method: "POST", mode: "no-cors", body });
+}
+document.getElementById("feedbackForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (document.getElementById("noteWebsite").value) return;
+  const text = draftText(); if (!text) return;
+  const coach = document.getElementById("coachName"); const type = document.getElementById("noteType"); const subject = document.getElementById("noteSubject"); const note = document.getElementById("noteText"); const button = document.getElementById("sendNoteButton");
+  const savedNote = { id: crypto.randomUUID?.() || String(Date.now()), coach: coach.value.trim(), type: type.value, subject: subject.value.trim(), note: note.value.trim(), created: new Date().toLocaleString(), createdAt: new Date().toISOString(), delivered: false };
+  notes.unshift(savedNote); subject.value = ""; note.value = ""; renderNotes(); button.disabled = true; button.textContent = "Sending…";
+  try { await sendCoachNote(savedNote); savedNote.delivered = true; renderNotes(); showToast("Sent to Darwin and saved here"); }
+  catch { renderNotes(); showToast("Saved here, but sending failed — tap Retry"); }
+  finally { button.disabled = false; button.textContent = "Send note to Darwin"; }
+});
 document.getElementById("shareDraft").addEventListener("click", () => { const text = draftText(); if (!text) { showToast("Add your name and note first"); return; } shareText("Comets coach note", text); });
-document.getElementById("savedNotes").addEventListener("click", (event) => { const share = event.target.closest("[data-share-note]"); const remove = event.target.closest("[data-delete-note]"); if (share) { const note = notes[Number(share.dataset.shareNote)]; shareText("Comets coach note", `COMETS COACH NOTE\nFrom: ${note.coach}\nType: ${note.type}${note.subject ? `\nPlayer/topic: ${note.subject}` : ""}\n\n${note.note}`); } if (remove) { notes.splice(Number(remove.dataset.deleteNote), 1); renderNotes(); } });
+document.getElementById("savedNotes").addEventListener("click", async (event) => { const send = event.target.closest("[data-send-note]"); const share = event.target.closest("[data-share-note]"); const remove = event.target.closest("[data-delete-note]"); if (send) { const note = notes[Number(send.dataset.sendNote)]; send.disabled = true; send.textContent = "Sending…"; try { await sendCoachNote(note); note.delivered = true; renderNotes(); showToast("Sent to Darwin"); } catch { send.disabled = false; send.textContent = "Retry"; showToast("Still could not send"); } return; } if (share) { const note = notes[Number(share.dataset.shareNote)]; shareText("Comets coach note", `COMETS COACH NOTE\nFrom: ${note.coach}\nType: ${note.type}${note.subject ? `\nPlayer/topic: ${note.subject}` : ""}\n\n${note.note}`); } if (remove) { notes.splice(Number(remove.dataset.deleteNote), 1); renderNotes(); } });
 renderNotes();
 
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;

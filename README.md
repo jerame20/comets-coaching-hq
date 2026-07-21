@@ -28,7 +28,9 @@ A dependency-free, mobile-first coaching app for the Comets roster, rotations, p
 
 ## Coach notes
 
-Coach notes save locally on the device and use the browser's native share sheet, which lets a coach send the structured note into GroupMe, Messages, or email without exposing a new backend. Automated Google Form creation was attempted, but the Google Forms API is disabled on Jeremy's configured Google project.
+Coach notes save locally on the device and submit to a private Google Form owned by Jeremy. Responses land in a linked private Sheet for Darwin's intake monitor; native sharing remains available as a fallback. Failed sends stay visibly marked on the device and can be retried.
+
+The deterministic launchd monitor in `scripts/note_intake_monitor.py` checks the response Sheet once per minute and relays unseen rows to the private soccer-coaching Discord channel. Minute-level freshness is intentional because notes may be submitted during games; a slower interval would leave coaches thinking the submission disappeared. SHA-256 row fingerprints provide deduplication, and failures alert the channel at most once per hour.
 
 Every text-entry field includes inline browser voice dictation. Tap the mic to start, speak, and tap again to stop. Dictation uses the browser's explicit microphone permission and inserts the transcript directly into the active field; no audio is stored by the app.
 

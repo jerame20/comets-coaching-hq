@@ -10,7 +10,7 @@
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
     <script>document.documentElement.dataset.theme = localStorage.getItem("comets-theme") || "night";</script>
-    <link rel="stylesheet" href="styles.css?v=20" />
+    <link rel="stylesheet" href="styles.css?v=21" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
   </head>
@@ -182,12 +182,13 @@
       </section>
 
       <section class="view data-view" id="feedback" data-view="feedback" data-title="Coach note">
-        <div class="page-head"><span>Coach feedback</span><h1>Capture it while it’s fresh</h1><p>Write the note here, save it on this phone, then share it directly to GroupMe, Messages, or email.</p></div>
+        <div class="page-head"><span>Coach feedback</span><h1>Capture it while it’s fresh</h1><p>Send the note to Darwin for Jeremy’s coaching review. A copy stays on this device so nothing gets lost.</p></div>
         <form class="feedback-form" id="feedbackForm">
+          <label class="form-trap" aria-hidden="true">Website<input id="noteWebsite" name="website" tabindex="-1" autocomplete="off"></label>
           <div class="form-row"><label>Your name<input id="coachName" name="coach" autocomplete="name" required placeholder="Brian"></label><label>Player or topic<input id="noteSubject" name="subject" placeholder="Optional"></label></div>
           <label>Note type<select id="noteType" name="type"><option>Player observation</option><option>Game note</option><option>Practice idea</option><option>Scheduling</option><option>Other</option></select></label>
           <label>What did you notice?<textarea id="noteText" name="note" rows="6" required placeholder="Specific, constructive, and useful..."></textarea></label>
-          <div class="form-actions"><button class="button primary" type="submit">Save note</button><button class="button secondary" id="shareDraft" type="button">Share note</button></div>
+          <div class="form-actions"><button class="button primary" id="sendNoteButton" type="submit">Send note to Darwin</button><button class="button secondary" id="shareDraft" type="button">Share another way</button></div>
         </form>
         <section class="saved-notes"><div class="panel-title"><h2>Saved on this device</h2><span id="savedCount"></span></div><div id="savedNotes"></div></section>
       </section>
@@ -207,6 +208,6 @@
     </dialog>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=20"></script>
+    <script src="app.js?v=21"></script>
   </body>
 </html>

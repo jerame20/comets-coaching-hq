@@ -1,2 +1,5 @@
 qa/
 .DS_Store
+note-intake-state.json
+note-intake.log
+note-intake.error.log
