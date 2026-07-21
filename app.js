@@ -44,19 +44,19 @@ async function shareText(title, text, url = "") {
 document.getElementById("shareButton").addEventListener("click", () => shareText("Comets Coaching HQ", "Comets coaching plans, rotations, and game-day tools.", location.href));
 
 const TEAM_PHOTO_KEY = "comets-team-reference-v1";
+const DEFAULT_TEAM_PHOTO = "./assets/comets-team-reference.png";
 const teamPhoto = document.getElementById("teamPhoto");
 const teamPhotoInput = document.getElementById("teamPhotoInput");
 const teamPhotoPlaceholder = document.getElementById("teamPhotoPlaceholder");
 const chooseTeamPhoto = document.getElementById("chooseTeamPhoto");
 const removeTeamPhoto = document.getElementById("removeTeamPhoto");
 function renderTeamPhoto(source = localStorage.getItem(TEAM_PHOTO_KEY)) {
-  const validSource = source?.startsWith("data:image/");
-  teamPhoto.hidden = !validSource;
-  teamPhotoPlaceholder.hidden = Boolean(validSource);
-  removeTeamPhoto.hidden = !validSource;
-  chooseTeamPhoto.textContent = validSource ? "Change reference photo" : "Add reference photo";
-  if (validSource) teamPhoto.src = source;
-  else teamPhoto.removeAttribute("src");
+  const customSource = source?.startsWith("data:image/") ? source : null;
+  teamPhoto.hidden = false;
+  teamPhotoPlaceholder.hidden = true;
+  removeTeamPhoto.hidden = !customSource;
+  chooseTeamPhoto.textContent = customSource ? "Change photo" : "Use different photo";
+  teamPhoto.src = customSource || DEFAULT_TEAM_PHOTO;
 }
 function compressTeamPhoto(file) {
   return new Promise((resolve, reject) => {
@@ -104,10 +104,10 @@ teamPhotoInput.addEventListener("change", async () => {
   }
 });
 removeTeamPhoto.addEventListener("click", () => {
-  if (!confirm("Remove the reference photo from this device?")) return;
+  if (!confirm("Restore the shared Comets team photo on this device?")) return;
   localStorage.removeItem(TEAM_PHOTO_KEY);
   renderTeamPhoto(null);
-  showToast("Reference photo removed");
+  showToast("Shared Comets photo restored");
 });
 renderTeamPhoto();
 
