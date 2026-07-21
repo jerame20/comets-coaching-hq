@@ -10,13 +10,13 @@
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
     <script>document.documentElement.dataset.theme = localStorage.getItem("comets-theme") || "night";</script>
-    <link rel="stylesheet" href="styles.css?v=14" />
+    <link rel="stylesheet" href="styles.css?v=15" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#home" aria-label="Comets Coaching HQ home">
+      <a class="brand" href="#gameday" aria-label="Comets Game Day">
         <svg class="comet-mark" aria-hidden="true" viewBox="0 0 110 54">
           <path class="comet-trail trail-wide" d="M4 41C25 29 43 20 68 18"/>
           <path class="comet-trail" d="M12 49C33 38 48 31 71 27"/>
@@ -38,7 +38,6 @@
 
     <nav class="tab-bar" aria-label="Coaching sections">
       <a class="gameday-tab" href="#gameday" data-tab="gameday"><span class="live-dot"></span>Game Day</a>
-      <a href="#home" data-tab="home">Home</a>
       <a href="#players" data-tab="players">Players</a>
       <a href="#rotation" data-tab="rotation">Rotation</a>
       <a href="#season" data-tab="season">Coverage</a>
@@ -47,7 +46,7 @@
     </nav>
 
     <main>
-      <section class="view active" id="home" data-view="home">
+      <section id="home" hidden>
         <div class="hero">
           <div class="eyebrow"><span></span> Shared coach workspace</div>
           <h1>One place to plan.<br /><em>One team to develop.</em></h1>
@@ -68,27 +67,6 @@
             <p>Rotate positions. Teach decisions. Compete with joy.</p>
           </div>
         </div>
-
-        <section class="team-reference" aria-labelledby="team-reference-heading">
-          <div class="team-reference-copy">
-            <span>Team reference</span>
-            <h2 id="team-reference-heading">Comets blue + black</h2>
-            <p>The real Comets kit: royal blue, black, white, and gray. Coaches can use this shared photo as the visual reference or choose a temporary replacement on their own device.</p>
-            <div class="team-reference-actions">
-              <button class="button primary" id="chooseTeamPhoto" type="button">Use different photo</button>
-              <button class="button secondary" id="removeTeamPhoto" type="button" hidden>Restore team photo</button>
-            </div>
-            <input id="teamPhotoInput" type="file" accept="image/*" hidden />
-          </div>
-          <div class="team-photo-frame" id="teamPhotoFrame">
-            <div class="team-photo-placeholder" id="teamPhotoPlaceholder" aria-hidden="true">
-              <span class="jersey-icon">C</span>
-              <strong>No photo yet</strong>
-              <small>Tap “Add reference photo”</small>
-            </div>
-            <img id="teamPhoto" alt="Comets team reference" hidden />
-          </div>
-        </section>
 
         <section class="quick-section" aria-labelledby="quick-heading">
           <div class="section-heading">
@@ -218,6 +196,6 @@
     </dialog>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=15"></script>
+    <script src="app.js?v=16"></script>
   </body>
 </html>

@@ -446,14 +446,22 @@ html[data-theme="night"] .player-dialog select,
 html[data-theme="night"] .player-dialog textarea { background: #0d1422; color: #f3f7ff; border-color: var(--line); }
 html[data-theme="night"] .choice-pills button { color: #d8e8ff; }
 html[data-theme="night"] .choice-pills button.active { background: #1557c0; border-color: #4da3ff; color: white; }
+html[data-theme="night"] .game-picker button,
+html[data-theme="night"] .quarter-picker button,
+html[data-theme="night"] .attendance-toolbar button { background: #111827; color: #d8e8ff; border-color: #31415b; }
+html[data-theme="night"] .game-picker button.active,
+html[data-theme="night"] .quarter-picker button.active { background: #1557c0; color: white; border-color: #4da3ff; }
+html[data-theme="night"] .player-actions button { background: #1d3353; color: #8ec5ff; }
 html[data-theme="night"] .attendance-grid-large button.present,
 html[data-theme="night"] .starter-preview div,
 html[data-theme="night"] .time-card.on-field { background: #122b50; border-color: #2d72cf; color: white; }
+html[data-theme="night"] .time-card.on-field > b { color: white; }
 html[data-theme="night"] .starter-preview .open { background: #352126; color: #ffb2a8; border-color: #8e4c45; }
 html[data-theme="night"] .swap-instruction { background: #352d18; color: #ffe09b; }
 html[data-theme="night"] .next-rotation-button,
 html[data-theme="night"] .start-game-button { background: #1976e8; color: white; box-shadow: 0 10px 26px rgba(25,118,232,.25); }
 html[data-theme="night"] .next-rotation-button:disabled { background: #202938; color: #7e8ba0; }
+html[data-theme="night"] .start-game-button:disabled { background: #202938; color: #9eacc3; opacity: 1; }
 html[data-theme="night"] .game-clock { border: 1px solid #29466f; background: linear-gradient(135deg,#0b1424,#101f35); box-shadow: 0 14px 35px rgba(0,0,0,.34); }
 html[data-theme="night"] .clock-button { background: #4da3ff; color: #06101f; }
 html[data-theme="night"] .bench-grid button.selected { border-color: #7bffbc; background: #123e38; color: white; }
@@ -512,7 +520,7 @@ html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
   .attendance-grid-large { grid-template-columns: repeat(2,1fr) !important; }
   .attendance-grid-large button { min-height: 68px !important; }
   .starter-preview { grid-template-columns: repeat(4,1fr); }
-  .start-game-button { position: sticky; bottom: 10px; z-index: 14; }
+  .start-game-button:not(:disabled) { position: sticky; bottom: 10px; z-index: 14; }
   .game-controls { display: block; }
   .game-controls select { width: 100%; }
   .quarter-picker { margin-top: 9px; }
@@ -540,7 +548,7 @@ html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
   /* Sideline mode: one-handed, glanceable, and stripped to game-critical controls. */
   body.gameday-view .site-header { display: none; }
   body.gameday-view .tab-bar { top: 0; min-height: 60px; justify-content: center; padding: 8px 12px; }
-  body.gameday-view .tab-bar a:not(.gameday-tab):not([data-tab="home"]) { display: none; }
+  body.gameday-view .tab-bar a:not(.gameday-tab):not([data-tab="players"]) { display: none; }
   body.gameday-view .tab-bar .gameday-tab { flex: 1 1 auto; max-width: 230px; min-height: 46px; font-size: 16px; }
   body.gameday-view .tab-bar [data-tab="home"] { min-height: 46px; }
   body.gameday-view .game-app { padding: 18px 12px 40px; }
