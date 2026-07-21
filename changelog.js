@@ -1,6 +1,17 @@
 window.COMETS_APP = {
-  version: "1.4.1",
+  version: "1.4.2",
   releases: [
+    {
+      version: "1.4.2",
+      date: "July 21, 2026",
+      title: "Navigation that stays out of the way",
+      summary: "The full app navigation now remains accessible without colliding with iPhone system UI.",
+      changes: [
+        "Kept the tab bar sticky and visible across every app page.",
+        "Added iPhone safe-area spacing to the header, tab bar, and live-game clock.",
+        "Locked the Game Day dot and label onto one line."
+      ]
+    },
     {
       version: "1.4.1",
       date: "July 21, 2026",

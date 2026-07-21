@@ -1,5 +1,5 @@
-const CACHE = "comets-hq-v30";
-const ASSETS = ["./", "./index.html", "./styles.css?v=29", "./data.js?v=10", "./changelog.js?v=2", "./app.js?v=28", "./manifest.json?v=2", "./icon.svg", "./comets-icon-v2-180.png", "./comets-icon-v2-192.png", "./comets-icon-v2-512.png", "./soccer-ball.svg"];
+const CACHE = "comets-hq-v31";
+const ASSETS = ["./", "./index.html", "./styles.css?v=30", "./data.js?v=10", "./changelog.js?v=3", "./app.js?v=28", "./manifest.json?v=2", "./icon.svg", "./comets-icon-v2-180.png", "./comets-icon-v2-192.png", "./comets-icon-v2-512.png", "./soccer-ball.svg"];
 self.addEventListener("install", (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener("activate", (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", (event) => {

@@ -27,8 +27,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 
 .site-header {
-  height: 72px;
-  padding: 0 clamp(18px, 4vw, 58px);
+  height: calc(72px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) clamp(18px, 4vw, 58px) 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -65,21 +65,21 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .theme-button b { font-size: 12px; }
 
 .tab-bar {
-  position: sticky; top: 0; z-index: 20; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
+  position: sticky; top: env(safe-area-inset-top); z-index: 20; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none;
   width: 100%; max-width: 100vw;
   padding: 9px clamp(14px, 4vw, 54px); background: rgba(255,254,250,.92); border-bottom: 1px solid var(--line);
   backdrop-filter: blur(16px);
 }
 .tab-bar::-webkit-scrollbar { display: none; }
 .tab-bar a {
-  flex: 0 0 auto; min-height: 42px; padding: 0 15px; border-radius: 999px; display: grid; place-items: center;
+  flex: 0 0 auto; min-height: 42px; padding: 0 15px; border-radius: 999px; display: flex; align-items: center; justify-content: center; white-space: nowrap;
   color: #5e6a7e; text-decoration: none; font-size: 14px; font-weight: 750; transition: 160ms ease;
 }
 .tab-bar a:hover { color: var(--green); background: #eaf1fb; }
 .tab-bar a.active { color: white; background: var(--green); }
 .tab-bar .gameday-tab { padding-inline: 18px; background: #1557c0; color: white; box-shadow: 0 5px 14px rgba(21,87,192,.22); }
 .tab-bar .gameday-tab:hover, .tab-bar .gameday-tab.active { background: #0f71e8; color: white; }
-.live-dot { width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: #7bffbc; box-shadow: 0 0 0 4px rgba(123,255,188,.15); }
+.live-dot { flex: 0 0 8px; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: #7bffbc; box-shadow: 0 0 0 4px rgba(123,255,188,.15); }
 
 main { min-height: calc(100vh - 190px); }
 .view { display: none; }
@@ -560,7 +560,7 @@ html[data-theme="night"] .release-card header b { background: #123e38; color: #7
 html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
 
 @media (max-width: 720px) {
-  .site-header { height: 64px; }
+  .site-header { height: calc(64px + env(safe-area-inset-top)); }
   .share-button span { display: none; }
   .share-button { width: 44px; padding: 0; justify-content: center; }
   .export-button span { display: none; }
@@ -656,7 +656,7 @@ html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
 
   /* Sideline mode: one-handed and glanceable without hiding navigation. */
   body.gameday-view .site-header { display: none; }
-  body.gameday-view .tab-bar { top: 0; }
+  body.gameday-view .tab-bar { top: env(safe-area-inset-top); }
   body.gameday-view .tab-bar .gameday-tab { min-height: 40px; padding-inline: 5px; font-size: 12px; }
   body.gameday-view .game-app { padding: 18px 12px 40px; }
   body.gameday-view footer { display: none; }
@@ -671,7 +671,7 @@ html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
   body.live-gameday .quarter-picker button { min-height: 54px; font-size: 15px; }
   body.live-gameday .time-color-key { flex-wrap: nowrap; gap: 11px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
   body.live-gameday .time-color-key::-webkit-scrollbar { display: none; }
-  body.live-gameday .game-clock { order: 3; top: 99px; min-height: 92px; margin: 0 0 10px; padding: 12px 14px; }
+  body.live-gameday .game-clock { order: 3; top: calc(99px + env(safe-area-inset-top)); min-height: 92px; margin: 0 0 10px; padding: 12px 14px; }
   body.live-gameday .game-clock strong { font-size: 50px; }
   body.live-gameday .clock-button { min-width: 122px; min-height: 66px; font-size: 19px; }
   body.live-gameday .swap-instruction { order: 4; min-height: 54px; margin: 0 0 10px; padding: 10px 13px; display: grid; place-items: center; font-size: 15px; line-height: 1.25; }
