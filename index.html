@@ -11,7 +11,7 @@
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
     <script>document.documentElement.dataset.theme = localStorage.getItem("comets-theme") || "night";</script>
-    <link rel="stylesheet" href="styles.css?v=27" />
+    <link rel="stylesheet" href="styles.css?v=28" />
     <link rel="manifest" href="manifest.json?v=2" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" sizes="180x180" href="comets-icon-v2-180.png" />
@@ -49,6 +49,7 @@
       <a href="#season" data-tab="season">Coverage</a>
       <a href="#roles" data-tab="roles">Roles</a>
       <a class="board-tab" href="#board" data-tab="board">Board <span class="tab-badge" id="boardBadge" hidden>0</span></a>
+      <a href="#changelog" data-tab="changelog">Changelog</a>
     </nav>
 
     <main>
@@ -204,6 +205,12 @@
         <div class="board-toolbar"><div><h2>Latest posts</h2><span id="boardStatus">Loading the board…</span></div><button id="refreshBoard" type="button">Refresh</button></div>
         <section class="board-feed" id="boardFeed" aria-live="polite"></section>
       </section>
+
+      <section class="view data-view" id="changelog" data-view="changelog" data-title="Changelog">
+        <div class="page-head changelog-head"><span>What shipped</span><h1>Changelog</h1><p>Every meaningful app update, organized by version so the coaches can see what has already been implemented.</p></div>
+        <div class="version-banner"><div><small>Current version</small><strong id="currentVersion">Loading…</strong></div><span>Latest release</span></div>
+        <section class="release-list" id="releaseList" aria-label="App release history"></section>
+      </section>
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -224,8 +231,9 @@
         <p>Changes save immediately, sync to the shared roster, and affect every coach’s Game Day recommendations.</p>
       </form>
     </dialog>
-    <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
+    <footer><span>Comets Coaching HQ <b id="footerVersion"></b></span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=27"></script>
+    <script src="changelog.js?v=1"></script>
+    <script src="app.js?v=28"></script>
   </body>
 </html>

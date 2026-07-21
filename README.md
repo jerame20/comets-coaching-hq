@@ -36,6 +36,10 @@ The soccer-ball artwork is adapted from Twemoji's `26bd.svg` under CC-BY 4.0.
 
 The Coach board remembers one of three device-local identities: Jeremy, Bryan, or Dante. Coaches can create posts with links and add threaded replies. New items appear immediately as pending, submit through Jeremy's private Google Form, and are mirrored into the read-only board feed by Darwin's intake monitor.
 
+## App versions and changelog
+
+`changelog.js` is the canonical app-version source. User-visible releases follow semantic versioning and prepend one release entry with a date, summary, and concrete shipped changes. The app renders that history in the Changelog tab, includes it in the Markdown export, and shows the current version in the footer. Every release must also bump the affected asset query strings and service-worker cache name so installed apps receive it promptly.
+
 The deterministic launchd monitor in `scripts/note_intake_monitor.py` checks the response Sheet once per minute, rebuilds `board.json`, and publishes changed board data. App-idea posts are also relayed to the private soccer-coaching Discord channel so Darwin can flag them for Jeremy. SHA-256 row fingerprints provide deduplication, and failures alert the channel at most once per hour.
 
 Board messages and replies include browser voice dictation. Coach identity remains a fixed dropdown and is remembered on that device.

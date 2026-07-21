@@ -1,4 +1,5 @@
 const DATA = window.COMETS_DATA;
+const APP = window.COMETS_APP || { version: "Unversioned", releases: [] };
 const SHEET = "https://docs.google.com/spreadsheets/d/1sG31dZoLYUNhUNntRkz9Qfbzh6aleKdKUHYZkxN5puQ/edit";
 const escapeHTML = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -41,6 +42,19 @@ function showView() {
 window.addEventListener("hashchange", showView);
 window.addEventListener("load", () => setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 0));
 showView();
+
+function renderChangelog() {
+  document.getElementById("currentVersion").textContent = `v${APP.version}`;
+  document.getElementById("footerVersion").textContent = `v${APP.version}`;
+  document.getElementById("releaseList").innerHTML = APP.releases.map((release, index) => `
+    <article class="release-card ${index === 0 ? "latest" : ""}">
+      <header><div><span>v${escapeHTML(release.version)}</span><time>${escapeHTML(release.date)}</time></div>${index === 0 ? "<b>Current</b>" : ""}</header>
+      <h2>${escapeHTML(release.title)}</h2>
+      <p>${escapeHTML(release.summary)}</p>
+      <ul>${release.changes.map((change) => `<li>${escapeHTML(change)}</li>`).join("")}</ul>
+    </article>`).join("");
+}
+renderChangelog();
 
 const themeButton = document.getElementById("themeButton");
 function renderThemeButton() {
@@ -697,7 +711,7 @@ function appDataMarkdown() {
   const lineup = currentLineup();
   const boardPosts = [...mergedBoard().posts].reverse();
   const lines = [
-    "# Comets Coaching HQ export", "", `Exported: ${new Date().toLocaleString()}`, "",
+    "# Comets Coaching HQ export", "", `App version: v${APP.version}`, `Exported: ${new Date().toLocaleString()}`, "",
     "## Roster", "", "| Player | Preferred positions | Preferred foot | Development focus |", "|---|---|---|---|",
     ...allPlayers().map((player) => `| ${markdownCell(player.name)} | ${markdownCell(player.anchors || "Flexible")} | ${markdownCell(player.foot || "Not noted")} | ${markdownCell(player.emphasis || "")} |`),
     "", "## Role guide", "", "| Position | Job | Coaching cue | Avoid |", "|---|---|---|---|",
@@ -738,6 +752,10 @@ function appDataMarkdown() {
   boardPosts.forEach((post) => {
     lines.push(`### ${post.title}`, "", `- Author: ${displayCoachName(post.author)}`, `- Category: ${post.category}`, `- Posted: ${post.created || post.createdAt || ""}`, "", post.body || "", "");
     (post.comments || []).forEach((comment) => lines.push(`> **${displayCoachName(comment.author)}:** ${String(comment.body || "").replace(/\r?\n/g, " ")}`, ""));
+  });
+  lines.push("", "## Changelog", "");
+  APP.releases.forEach((release) => {
+    lines.push(`### v${release.version} — ${release.title}`, "", `Released: ${release.date}`, "", release.summary, "", ...release.changes.map((change) => `- ${change}`), "");
   });
   return lines.join("\n").trim();
 }
