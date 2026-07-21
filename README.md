@@ -2,6 +2,8 @@
 
 A dependency-free, mobile-first coaching app for the Comets roster, rotations, player coverage, coach collaboration, and live substitutions.
 
+The soccer-ball artwork is adapted from Twemoji's `26bd.svg` under CC-BY 4.0.
+
 ## Privacy model
 
 - Jeremy explicitly approved publishing names and planning data in the app.
@@ -15,6 +17,7 @@ A dependency-free, mobile-first coaching app for the Comets roster, rotations, p
 - Attendance-first check-in with large touch targets and a generated starting lineup
 - PSA 2nd-grade defaults: indoor 9v9 with two 20-minute halves and outdoor 7v7 with four 12-minute quarters, with two formations per format
 - Add-player flow with device-local roster persistence
+- Player profile edits, additions, and removals sync through the private intake Sheet into a shared durable roster; local storage remains the instant/offline copy
 - Six games with attendance-aware plans for either halves or quarters
 - Large 2-3-1 field controls and bench buttons
 - Tap field player, then bench player, to record a substitution
@@ -32,7 +35,7 @@ The Coach board remembers one of three device-local identities: Jeremy, Brian, o
 
 The deterministic launchd monitor in `scripts/note_intake_monitor.py` checks the response Sheet once per minute, rebuilds `board.json`, and publishes changed board data. App-idea posts are also relayed to the private soccer-coaching Discord channel so Darwin can flag them for Jeremy. SHA-256 row fingerprints provide deduplication, and failures alert the channel at most once per hour.
 
-The board intentionally does not add browser voice controls. Its coach name is a fixed dropdown and is remembered on that device.
+Board messages and replies include browser voice dictation. Coach identity remains a fixed dropdown and is remembered on that device.
 
 ## Local preview
 

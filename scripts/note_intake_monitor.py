@@ -15,6 +15,7 @@ from pathlib import Path
 PROJECT_DIR = Path("/Users/darwin/.openclaw/workspace/projects/tycho-soccer")
 STATE_PATH = PROJECT_DIR / "note-intake-state.json"
 BOARD_PATH = PROJECT_DIR / "board.json"
+PLAYER_PROFILES_PATH = PROJECT_DIR / "player-profiles.json"
 GOG_SAFE = "/Users/darwin/.openclaw/workspace/scripts/gog-safe"
 OPENCLAW = "/opt/homebrew/bin/openclaw"
 SHEET_ID = "1J8E8bbGuMhN6IkBrNk8JGgJoatv0W9YWZg-_zSYe6RA"
@@ -119,6 +120,32 @@ def parse_board_row(row):
     return None
 
 
+def parse_player_profile_row(row):
+    padded = list(row) + [""] * (5 - len(row))
+    timestamp, coach, subject, note_type, note = padded[:5]
+    if not str(subject).startswith("PLAYER_PROFILE|"):
+        return None
+    profile_id = clean(str(subject).split("|", 1)[1], 180)
+    if not profile_id.startswith(("seed-", "custom-")):
+        return None
+    try:
+        payload = json.loads(str(note))
+    except (TypeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict) or clean(payload.get("id"), 180) != profile_id:
+        return None
+    return {
+        "id": profile_id,
+        "name": clean(payload.get("name"), 80),
+        "anchors": clean(payload.get("anchors"), 120),
+        "foot": clean(payload.get("foot"), 40),
+        "emphasis": clean(payload.get("emphasis"), 300),
+        "custom": bool(payload.get("custom")),
+        "archived": bool(payload.get("archived")),
+        "updatedAt": clean(payload.get("updatedAt"), 80) or clean(timestamp, 80),
+    }
+
+
 def build_board(rows):
     posts = []
     posts_by_id = {}
@@ -159,6 +186,33 @@ def publish_board(rows):
     run_command(["git", "-C", str(PROJECT_DIR), "push", "origin", "main"])
 
 
+def build_player_profiles(rows):
+    profiles = {}
+    latest = ""
+    for row in rows:
+        profile = parse_player_profile_row(row)
+        if not profile:
+            continue
+        profiles[profile["id"]] = profile
+        latest = profile["updatedAt"]
+    return {"updatedAt": latest, "profiles": profiles}
+
+
+def publish_player_profiles(rows):
+    payload = json.dumps(build_player_profiles(rows), ensure_ascii=False, indent=2) + "\n"
+    if PLAYER_PROFILES_PATH.exists() and PLAYER_PROFILES_PATH.read_text() == payload:
+        return
+    temporary = PLAYER_PROFILES_PATH.with_suffix(".tmp")
+    temporary.write_text(payload)
+    temporary.replace(PLAYER_PROFILES_PATH)
+    run_command(["git", "-C", str(PROJECT_DIR), "add", "player-profiles.json"])
+    staged = subprocess.run(["git", "-C", str(PROJECT_DIR), "diff", "--cached", "--quiet", "--", "player-profiles.json"])
+    if staged.returncode == 0:
+        return
+    run_command(["git", "-C", str(PROJECT_DIR), "commit", "-m", "Update shared player profiles"])
+    run_command(["git", "-C", str(PROJECT_DIR), "push", "origin", "main"])
+
+
 def format_app_idea(item):
     return (
         "💡 **New Comets app idea from the coach board**\n"
@@ -188,6 +242,7 @@ def main():
     try:
         rows = fetch_rows()
         publish_board(rows)
+        publish_player_profiles(rows)
         seen = set(state.get("seen", []))
         if arguments.bootstrap:
             seen.update(row_digest(row) for row in rows)
@@ -197,9 +252,10 @@ def main():
                 if digest in seen:
                     continue
                 board_item = parse_board_row(row)
+                player_item = parse_player_profile_row(row)
                 if board_item and board_item["kind"] == "post" and board_item.get("category") == "App idea":
                     send_discord(format_app_idea(board_item))
-                elif not board_item:
+                elif not board_item and not player_item:
                     send_discord(format_note(row))
                 seen.add(digest)
         state["seen"] = list(seen)[-MAX_SEEN:]

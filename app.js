@@ -4,6 +4,7 @@ const escapeHTML = (value) => String(value).replace(/[&<>'"]/g, (character) => (
 const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const ROSTER_KEY = "comets-roster-v1";
 const PLAYER_OVERRIDES_KEY = "comets-player-overrides-v1";
+const PLAYER_PROFILE_SOURCE = "https://raw.githubusercontent.com/jerame20/comets-coaching-hq/main/player-profiles.json";
 const seedPlayers = DATA.players.map(([name, foot, anchors, emphasis]) => ({ id: `seed-${slug(name)}`, sourceName: name, name, foot, anchors, emphasis, custom: false }));
 let customPlayers;
 let playerOverrides;
@@ -462,6 +463,37 @@ function openPlayerDialog(player = null) {
 }
 document.querySelectorAll(".add-player-trigger").forEach((button) => button.addEventListener("click", () => openPlayerDialog()));
 document.getElementById("closePlayerDialog").addEventListener("click", () => playerDialog.close());
+function playerProfilePayload(player) {
+  return { id: player.id, name: player.name, anchors: player.anchors, foot: player.foot, emphasis: player.emphasis, custom: Boolean(player.custom), archived: Boolean(player.archived), updatedAt: player.updatedAt || new Date().toISOString() };
+}
+async function syncPlayerProfile(player) {
+  const profile = playerProfilePayload(player);
+  const author = localStorage.getItem("comets-coach-identity-v1") || "Coach";
+  const body = new URLSearchParams({ [NOTE_FORM_FIELDS.coach]: author, [NOTE_FORM_FIELDS.subject]: `PLAYER_PROFILE|${profile.id}`, [NOTE_FORM_FIELDS.type]: "Other", [NOTE_FORM_FIELDS.note]: JSON.stringify(profile), submit: "Submit" });
+  await fetch(NOTE_FORM_ENDPOINT, { method: "POST", mode: "no-cors", body });
+}
+function newerProfile(incoming, local) {
+  if (!local?.updatedAt) return true;
+  return String(incoming.updatedAt || "") >= String(local.updatedAt);
+}
+async function loadSharedPlayerProfiles() {
+  try {
+    const response = await fetch(`${PLAYER_PROFILE_SOURCE}?v=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) return;
+    const payload = await response.json();
+    Object.entries(payload.profiles || {}).forEach(([id, profile]) => {
+      if (id.startsWith("seed-") && newerProfile(profile, playerOverrides[id])) playerOverrides[id] = profile;
+      if (id.startsWith("custom-")) {
+        const index = customPlayers.findIndex((player) => player.id === id);
+        if (index < 0) customPlayers.push(profile);
+        else if (newerProfile(profile, customPlayers[index])) customPlayers[index] = { ...customPlayers[index], ...profile };
+      }
+    });
+    localStorage.setItem(PLAYER_OVERRIDES_KEY, JSON.stringify(playerOverrides));
+    localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers));
+    renderRoster(); renderRotation(); renderCoverage(); renderGame();
+  } catch {}
+}
 document.getElementById("playerForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const name = document.getElementById("newPlayerName").value.trim();
@@ -472,28 +504,34 @@ document.getElementById("playerForm").addEventListener("submit", (event) => {
   if (allPlayers().some((player) => player.id !== editingPlayerId && player.name.toLowerCase() === name.toLowerCase())) { showToast("That player is already on the roster"); return; }
   if (editingPlayerId) {
     const player = playerById(editingPlayerId);
+    const updatedAt = new Date().toISOString();
+    let savedPlayer;
     if (player?.custom) {
-      customPlayers = customPlayers.map((item) => item.id === editingPlayerId ? { ...item, name, anchors, foot, emphasis } : item);
+      customPlayers = customPlayers.map((item) => item.id === editingPlayerId ? { ...item, name, anchors, foot, emphasis, archived: false, updatedAt } : item);
       localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers));
+      savedPlayer = customPlayers.find((item) => item.id === editingPlayerId);
     } else {
-      playerOverrides[editingPlayerId] = { ...(playerOverrides[editingPlayerId] || {}), name, anchors, foot, emphasis };
+      playerOverrides[editingPlayerId] = { ...(playerOverrides[editingPlayerId] || {}), id: editingPlayerId, name, anchors, foot, emphasis, custom: false, archived: false, updatedAt };
       localStorage.setItem(PLAYER_OVERRIDES_KEY, JSON.stringify(playerOverrides));
+      savedPlayer = playerOverrides[editingPlayerId];
     }
-    playerDialog.close(); renderRoster(); renderRotation(); renderCoverage(); renderGame(); showToast(`${name} updated`);
+    playerDialog.close(); renderRoster(); renderRotation(); renderCoverage(); renderGame(); showToast(`${name} saved and syncing`); syncPlayerProfile(savedPlayer).catch(() => showToast(`${name} saved here; shared sync will retry next edit`));
     return;
   }
   const id = `custom-${crypto.randomUUID?.() || `${Date.now()}-${slug(name)}`}`;
-  customPlayers.push({ id, name, anchors, foot, emphasis, custom: true });
-  localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers)); gameState.present.push(id); playerDialog.close(); renderRoster(); renderRotation(); renderCoverage(); renderGame(); showToast(`${name} added to the roster`);
+  const savedPlayer = { id, name, anchors, foot, emphasis, custom: true, archived: false, updatedAt: new Date().toISOString() };
+  customPlayers.push(savedPlayer);
+  localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers)); gameState.present.push(id); playerDialog.close(); renderRoster(); renderRotation(); renderCoverage(); renderGame(); showToast(`${name} added and syncing`); syncPlayerProfile(savedPlayer).catch(() => showToast(`${name} saved here; shared sync will retry next edit`));
 });
 document.getElementById("playerGrid").addEventListener("click", (event) => {
   const edit = event.target.closest("[data-edit-player]"); const remove = event.target.closest("[data-remove-player]");
   if (edit) { const player = playerById(edit.dataset.editPlayer); if (player) openPlayerDialog(player); return; }
   if (!remove) return; const player = playerById(remove.dataset.removePlayer);
-  if (!player || !confirm(`Remove ${player.name} from this device?`)) return;
-  customPlayers = customPlayers.map((item) => item.id === player.id ? { ...item, archived: true } : item); localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers)); gameState.present = gameState.present.filter((id) => id !== player.id); renderRoster(); renderRotation(); renderCoverage(); renderGame();
+  if (!player || !confirm(`Remove ${player.name} from the shared roster?`)) return;
+  customPlayers = customPlayers.map((item) => item.id === player.id ? { ...item, archived: true, updatedAt: new Date().toISOString() } : item); localStorage.setItem(ROSTER_KEY, JSON.stringify(customPlayers)); gameState.present = gameState.present.filter((id) => id !== player.id); renderRoster(); renderRotation(); renderCoverage(); renderGame(); const archivedPlayer = customPlayers.find((item) => item.id === player.id); syncPlayerProfile(archivedPlayer).catch(() => showToast("Removed here; shared sync will retry next edit"));
 });
 renderGame();
+loadSharedPlayerProfiles();
 if (gameState.runningSince && gameState.live && gameState.current) {
   clockRunning = true; settleClock();
   if (clockRunning) clockTimer = setInterval(tickClock, 250);
@@ -565,8 +603,9 @@ function renderBoard() {
       <header><div class="coach-avatar">${escapeHTML(post.author.slice(0,1))}</div><div><strong>${escapeHTML(post.title)}</strong><small>${escapeHTML(post.author)} · ${displayBoardTime(post.createdAt || post.created)}${post.pending ? " · Syncing…" : ""}</small></div><span class="board-category">${escapeHTML(post.category)}</span></header>
       <div class="board-message">${linkifyBoardText(post.body)}</div>
       <section class="board-comments">${(post.comments || []).map((comment) => `<div class="board-comment ${comment.pending ? "pending" : ""}"><b>${escapeHTML(comment.author)}</b><p>${linkifyBoardText(comment.body)}</p><small>${displayBoardTime(comment.createdAt || comment.created)}${comment.pending ? " · Syncing…" : ""}</small></div>`).join("")}</section>
-      <form class="comment-form" data-parent-id="${escapeHTML(post.id)}"><textarea rows="2" maxlength="1500" required placeholder="Reply as ${escapeHTML(currentCoach() || "a coach")}…" data-no-dictation></textarea><button type="submit">Reply</button></form>
+      <form class="comment-form" data-parent-id="${escapeHTML(post.id)}"><textarea rows="2" maxlength="1500" required placeholder="Reply as ${escapeHTML(currentCoach() || "a coach")}…"></textarea><button type="submit">Reply</button></form>
     </article>`).join("") : `<div class="board-empty"><strong>No posts yet.</strong><span>Start with a practice idea, useful video, or question for the other coaches.</span></div>`;
+  window.installDictationFields?.(document.getElementById("boardFeed"));
 }
 async function sendBoardItem(item) {
   const encodedTitle = encodeURIComponent(item.title || "");
@@ -659,14 +698,18 @@ function startDictation(field, button) {
   activeRecognition = recognition; activeDictationButton = button;
   try { recognition.start(); } catch { finishDictation(); showToast("Could not start voice dictation"); }
 }
-document.querySelectorAll('input:not([type]):not([data-no-dictation]), input[type="text"]:not([data-no-dictation]), textarea:not([data-no-dictation])').forEach((field) => {
-  if (field.closest(".dictation-field")) return;
-  const wrapper = document.createElement("div"); wrapper.className = `dictation-field ${field.tagName === "TEXTAREA" ? "dictation-area" : ""}`;
-  field.parentNode.insertBefore(wrapper, field); wrapper.appendChild(field);
-  const label = dictationLabel(field);
-  const button = document.createElement("button"); button.type = "button"; button.className = "dictation-button"; button.dataset.label = label; button.title = `Dictate ${label}`; button.setAttribute("aria-label", `Dictate ${label}`); button.setAttribute("aria-pressed", "false");
-  button.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15Zm-1.5-8.5a1.5 1.5 0 1 1 3 0v5a1.5 1.5 0 1 1-3 0v-5Zm7 4.5v.5a5.5 5.5 0 0 1-11 0V11h-2v.5a7.5 7.5 0 0 0 6.5 7.43V22h2v-3.07a7.5 7.5 0 0 0 6.5-7.43V11h-2Z"/></svg>';
-  button.addEventListener("click", () => startDictation(field, button)); wrapper.appendChild(button);
-});
+function installDictationFields(root = document) {
+  root.querySelectorAll('input:not([type]):not([data-no-dictation]), input[type="text"]:not([data-no-dictation]), textarea:not([data-no-dictation])').forEach((field) => {
+    if (field.closest(".dictation-field")) return;
+    const wrapper = document.createElement("div"); wrapper.className = `dictation-field ${field.tagName === "TEXTAREA" ? "dictation-area" : ""}`;
+    field.parentNode.insertBefore(wrapper, field); wrapper.appendChild(field);
+    const label = dictationLabel(field);
+    const button = document.createElement("button"); button.type = "button"; button.className = "dictation-button"; button.dataset.label = label; button.title = `Dictate ${label}`; button.setAttribute("aria-label", `Dictate ${label}`); button.setAttribute("aria-pressed", "false");
+    button.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15Zm-1.5-8.5a1.5 1.5 0 1 1 3 0v5a1.5 1.5 0 1 1-3 0v-5Zm7 4.5v.5a5.5 5.5 0 0 1-11 0V11h-2v.5a7.5 7.5 0 0 0 6.5 7.43V22h2v-3.07a7.5 7.5 0 0 0 6.5-7.43V11h-2Z"/></svg>';
+    button.addEventListener("click", () => startDictation(field, button)); wrapper.appendChild(button);
+  });
+}
+window.installDictationFields = installDictationFields;
+installDictationFields();
 
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
