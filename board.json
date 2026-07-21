@@ -1,6 +1,15 @@
 {
-  "updatedAt": "7/21/2026 11:53:28",
+  "updatedAt": "7/21/2026 14:09:13",
   "posts": [
+    {
+      "id": "post-ef101f9a-b083-41c2-864b-dd2c79caa2b6",
+      "author": "Bryan",
+      "title": "Improve the top nav bar",
+      "category": "App idea",
+      "body": "The top nav bar doesn’t have enough space at the top and is showing up underneath the iPhone status bar things. Also, don’t wrap the nav links - one scrollable row is ok.",
+      "created": "7/21/2026 14:09:13",
+      "comments": []
+    },
     {
       "id": "post-2f7073a4-5a2b-473a-951e-744aca94e044",
       "author": "Jeremy",
