@@ -1,15 +1,6 @@
 {
-  "updatedAt": "7/21/2026 14:30:58",
+  "updatedAt": "7/21/2026 14:09:13",
   "posts": [
-    {
-      "id": "post-bee19fb5-918b-44b8-a230-57cfd9304e0d",
-      "author": "Bryan",
-      "title": "Microphone button hides reply input on mobile",
-      "category": "App idea",
-      "body": "The microphone button hides the text input to reply to board posts on mobile devices.",
-      "created": "7/21/2026 14:30:58",
-      "comments": []
-    },
     {
       "id": "post-ef101f9a-b083-41c2-864b-dd2c79caa2b6",
       "author": "Bryan",
