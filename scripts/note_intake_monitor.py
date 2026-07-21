@@ -139,7 +139,7 @@ def parse_player_profile_row(row):
         return None
     if not isinstance(payload, dict) or clean(payload.get("id"), 180) != profile_id:
         return None
-    return {
+    profile = {
         "id": profile_id,
         "name": clean(payload.get("name"), 80),
         "anchors": clean(payload.get("anchors"), 120),
@@ -149,6 +149,9 @@ def parse_player_profile_row(row):
         "archived": bool(payload.get("archived")),
         "updatedAt": clean(payload.get("updatedAt"), 80) or clean(timestamp, 80),
     }
+    if profile_id == "seed-atar" and profile["name"] == "Avyaan":
+        profile["name"] = "Atar"
+    return profile
 
 
 def build_board(rows):

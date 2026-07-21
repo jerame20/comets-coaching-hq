@@ -18,6 +18,7 @@ The soccer-ball artwork is adapted from Twemoji's `26bd.svg` under CC-BY 4.0.
 - PSA 2nd-grade defaults: indoor 9v9 with two 20-minute halves and outdoor 7v7 with four 12-minute quarters; outdoor includes 2-3-1, 3-2-1, 1-3-2, and 1-2-3 formations
 - Live formation switching that preserves the current on-field group, clock, playing-time totals, and game log
 - One-block Markdown export of every app-visible roster, role, coverage, rotation, game-state, and coach-board dataset
+- Phone navigation keeps all six sections visible in a compact two-row grid; 16px controls and strict width containment prevent iOS focus zoom and accidental page-level horizontal scrolling
 - Add-player flow with device-local roster persistence
 - Player profile edits, additions, and removals sync through the private intake Sheet into a shared durable roster; local storage remains the instant/offline copy
 - Six games with attendance-aware plans for either halves or quarters
