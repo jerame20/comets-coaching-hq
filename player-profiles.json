@@ -1,4 +1,15 @@
 {
-  "updatedAt": "",
-  "profiles": {}
+  "updatedAt": "2026-07-21T18:07:48.139Z",
+  "profiles": {
+    "seed-atar": {
+      "id": "seed-atar",
+      "name": "Avyaan",
+      "anchors": "LM / CM / ST",
+      "foot": "Not noted",
+      "emphasis": "Attacking stabilizer plus full rotation",
+      "custom": false,
+      "archived": false,
+      "updatedAt": "2026-07-21T18:07:48.139Z"
+    }
+  }
 }
