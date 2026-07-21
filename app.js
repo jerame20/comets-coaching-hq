@@ -43,6 +43,74 @@ async function shareText(title, text, url = "") {
 }
 document.getElementById("shareButton").addEventListener("click", () => shareText("Comets Coaching HQ", "Comets coaching plans, rotations, and game-day tools.", location.href));
 
+const TEAM_PHOTO_KEY = "comets-team-reference-v1";
+const teamPhoto = document.getElementById("teamPhoto");
+const teamPhotoInput = document.getElementById("teamPhotoInput");
+const teamPhotoPlaceholder = document.getElementById("teamPhotoPlaceholder");
+const chooseTeamPhoto = document.getElementById("chooseTeamPhoto");
+const removeTeamPhoto = document.getElementById("removeTeamPhoto");
+function renderTeamPhoto(source = localStorage.getItem(TEAM_PHOTO_KEY)) {
+  const validSource = source?.startsWith("data:image/");
+  teamPhoto.hidden = !validSource;
+  teamPhotoPlaceholder.hidden = Boolean(validSource);
+  removeTeamPhoto.hidden = !validSource;
+  chooseTeamPhoto.textContent = validSource ? "Change reference photo" : "Add reference photo";
+  if (validSource) teamPhoto.src = source;
+  else teamPhoto.removeAttribute("src");
+}
+function compressTeamPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("read"));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("image"));
+      image.onload = () => {
+        const maxSide = 1600;
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext("2d");
+        context.fillStyle = "#080b12";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", .82));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+chooseTeamPhoto.addEventListener("click", () => teamPhotoInput.click());
+teamPhotoInput.addEventListener("change", async () => {
+  const file = teamPhotoInput.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { showToast("Choose an image file"); return; }
+  if (file.size > 25 * 1024 * 1024) { showToast("That photo is too large — choose one under 25 MB"); return; }
+  chooseTeamPhoto.disabled = true;
+  chooseTeamPhoto.textContent = "Preparing photo…";
+  try {
+    const source = await compressTeamPhoto(file);
+    localStorage.setItem(TEAM_PHOTO_KEY, source);
+    renderTeamPhoto(source);
+    showToast("Reference photo saved on this device");
+  } catch {
+    renderTeamPhoto();
+    showToast("Could not save that photo");
+  } finally {
+    chooseTeamPhoto.disabled = false;
+    teamPhotoInput.value = "";
+  }
+});
+removeTeamPhoto.addEventListener("click", () => {
+  if (!confirm("Remove the reference photo from this device?")) return;
+  localStorage.removeItem(TEAM_PHOTO_KEY);
+  renderTeamPhoto(null);
+  showToast("Reference photo removed");
+});
+renderTeamPhoto();
+
 function renderRoster() {
   document.getElementById("playerGrid").innerHTML = allPlayers().map((player) => `
     <article class="player-card ${player.custom ? "custom-player" : ""}"><span>${escapeHTML(player.name.slice(0,1))}</span><div><h2>${escapeHTML(player.name)}</h2><p>${escapeHTML(player.emphasis || "New player · ready to add to today’s rotation")}</p></div><dl><div><dt>Role anchors</dt><dd>${escapeHTML(player.anchors || "Flexible")}</dd></div><div><dt>Preferred foot</dt><dd>${escapeHTML(player.foot || "Not noted")}</dd></div></dl>${player.custom ? `<button class="remove-player" type="button" data-remove-player="${player.id}">Remove</button>` : ""}</article>`).join("");

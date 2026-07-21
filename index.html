@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#173b2b" />
+    <meta name="theme-color" content="#080b12" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="robots" content="noindex, nofollow" />
@@ -58,6 +58,27 @@
             <p>Rotate positions. Teach decisions. Compete with joy.</p>
           </div>
         </div>
+
+        <section class="team-reference" aria-labelledby="team-reference-heading">
+          <div class="team-reference-copy">
+            <span>Team reference</span>
+            <h2 id="team-reference-heading">Comets blue + black</h2>
+            <p>Add a jersey, team, formation-board, or other reference photo. It stays on this device so it is available on the sideline.</p>
+            <div class="team-reference-actions">
+              <button class="button primary" id="chooseTeamPhoto" type="button">Add reference photo</button>
+              <button class="button secondary" id="removeTeamPhoto" type="button" hidden>Remove photo</button>
+            </div>
+            <input id="teamPhotoInput" type="file" accept="image/*" hidden />
+          </div>
+          <div class="team-photo-frame" id="teamPhotoFrame">
+            <div class="team-photo-placeholder" id="teamPhotoPlaceholder" aria-hidden="true">
+              <span class="jersey-icon">C</span>
+              <strong>No photo yet</strong>
+              <small>Tap “Add reference photo”</small>
+            </div>
+            <img id="teamPhoto" alt="Comets team reference" hidden />
+          </div>
+        </section>
 
         <section class="quick-section" aria-labelledby="quick-heading">
           <div class="section-heading">
