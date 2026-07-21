@@ -10,7 +10,7 @@
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
     <script>document.documentElement.dataset.theme = localStorage.getItem("comets-theme") || "night";</script>
-    <link rel="stylesheet" href="styles.css?v=17" />
+    <link rel="stylesheet" href="styles.css?v=20" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
   </head>
@@ -154,7 +154,7 @@
           <div class="setup-step"><span>2</span><div><strong>Who showed up?</strong><small>Tap each kid who is here, or use Select all.</small></div></div>
           <div class="attendance-toolbar"><strong id="attendanceCount"></strong><div><button id="selectAllPlayers" type="button">Select all</button><button class="add-player-trigger" type="button">+ Add player</button></div></div>
           <div class="attendance-grid attendance-grid-large" id="attendanceGrid"></div>
-          <div class="setup-step"><span>3</span><div><strong>Recommended starters</strong><small>Based on the planned rotation and today’s attendance.</small></div></div>
+          <div class="setup-step"><span>3</span><div><strong>Recommended starters</strong><small id="starterHelp">Tap any starter to change them.</small></div></div>
           <div class="starter-preview" id="starterPreview"></div>
           <p class="setup-warning" id="setupWarning" role="status"></p>
           <button class="start-game-button" id="startGame" type="button">Start game with this lineup</button>
@@ -207,6 +207,6 @@
     </dialog>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=19"></script>
+    <script src="app.js?v=20"></script>
   </body>
 </html>

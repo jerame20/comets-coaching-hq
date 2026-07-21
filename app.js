@@ -111,19 +111,20 @@ const TIMING_PRESETS = {
 };
 const PERIOD_MINUTES = [8,10,12,15,20,25,30,35,40,45];
 const STORAGE_KEY = "comets-gameday-v3";
-const defaultGameState = () => ({ version: 7, sessionId: crypto.randomUUID?.() || String(Date.now()), game: 0, quarter: 0, format: "outdoor", teamSize: 7, formation: "7-231", timingPreset: "psa-2", periodCount: 4, periodMinutes: 12, present: [], live: false, editingSession: false, plan: null, current: null, log: [], playingSeconds: {}, periodPlayingSeconds: {}, runningSince: null, seconds: 720 });
+const defaultGameState = () => ({ version: 8, sessionId: crypto.randomUUID?.() || String(Date.now()), game: 0, quarter: 0, format: "outdoor", teamSize: 7, formation: "7-231", timingPreset: "psa-2", periodCount: 4, periodMinutes: 12, present: [], starterLineup: null, live: false, editingSession: false, plan: null, current: null, log: [], playingSeconds: {}, periodPlayingSeconds: {}, runningSince: null, seconds: 720 });
 let gameState;
 try { gameState = { ...defaultGameState(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; } catch { gameState = defaultGameState(); }
 if (!FORMAT_SIZES[gameState.format]?.includes(Number(gameState.teamSize))) { gameState.format = "outdoor"; gameState.teamSize = 7; }
 if (!FORMATIONS[gameState.teamSize]?.some((formation) => formation.id === gameState.formation)) gameState.formation = FORMATIONS[gameState.teamSize][0].id;
 if (![2,4].includes(Number(gameState.periodCount))) gameState.periodCount = 4;
 if (!PERIOD_MINUTES.includes(Number(gameState.periodMinutes))) gameState.periodMinutes = 12;
-gameState.version = 7;
+gameState.version = 8;
 gameState.playingSeconds ||= {};
 gameState.periodPlayingSeconds ||= gameState.quarterPlayingSeconds || {};
 gameState.runningSince ||= null;
 let selectedPosition = null;
 let selectedBenchId = null;
+let selectedStarterPosition = null;
 let clockTimer = null;
 let clockRunning = Boolean(gameState.runningSince);
 let wakeLock = null;
@@ -177,6 +178,25 @@ function buildPlan() {
     return { lineup, bench };
   });
 }
+function resolvedStarterLineup(plan = buildPlan()) {
+  const fallback = plan[0]?.lineup || [];
+  if (!Array.isArray(gameState.starterLineup)) return [...fallback];
+  const used = new Set();
+  return Array.from({ length: gameState.teamSize }, (_, index) => {
+    const saved = gameState.starterLineup[index];
+    const fallbackId = fallback[index];
+    const id = [saved, fallbackId, ...gameState.present].find((candidate) => candidate && gameState.present.includes(candidate) && !used.has(candidate));
+    if (id) used.add(id);
+    return id || null;
+  });
+}
+function planWithEditedStarters() {
+  const plan = buildPlan();
+  if (!plan[0]) return plan;
+  const lineup = resolvedStarterLineup(plan);
+  plan[0] = { lineup, bench: gameState.present.filter((id) => !lineup.includes(id)) };
+  return plan;
+}
 function renderAttendance() {
   const players = allPlayers();
   const formation = activeFormation();
@@ -187,11 +207,16 @@ function renderAttendance() {
   document.getElementById("timingPreset").value = TIMING_PRESETS[gameState.timingPreset] ? gameState.timingPreset : "custom";
   document.querySelectorAll("[data-period-count]").forEach((button) => button.classList.toggle("active", Number(button.dataset.periodCount) === gameState.periodCount));
   document.getElementById("periodMinutes").innerHTML = PERIOD_MINUTES.map((minutes) => `<option value="${minutes}" ${minutes === gameState.periodMinutes ? "selected" : ""}>${minutes} minutes</option>`).join("");
-  document.getElementById("attendanceGrid").innerHTML = players.map((player) => `<button type="button" data-player-id="${player.id}" class="${gameState.present.includes(player.id) ? "present" : ""}" aria-pressed="${gameState.present.includes(player.id)}"><span>${gameState.present.includes(player.id) ? "✓" : ""}</span>${escapeHTML(player.name)}</button>`).join("");
+  document.getElementById("attendanceGrid").classList.toggle("choosing-starter", selectedStarterPosition !== null);
+  document.getElementById("attendanceGrid").innerHTML = players.map((player) => {
+    const present = gameState.present.includes(player.id);
+    return `<button type="button" data-player-id="${player.id}" class="${present ? "present" : ""} ${selectedStarterPosition !== null && present ? "replacement-option" : ""}" aria-pressed="${present}" ${selectedStarterPosition !== null && !present ? "disabled" : ""}><span>${present ? (selectedStarterPosition !== null ? "↔" : "✓") : ""}</span>${escapeHTML(player.name)}</button>`;
+  }).join("");
   document.getElementById("attendanceCount").textContent = `${gameState.present.length} of ${players.length} selected`;
   document.getElementById("selectAllPlayers").textContent = gameState.present.length === players.length ? "Clear all" : "Select all";
-  const preview = buildPlan()[0];
-  document.getElementById("starterPreview").innerHTML = formation.positions.map((position, index) => `<div class="${preview.lineup[index] ? "" : "open"}"><small>${position.label}</small><strong>${preview.lineup[index] ? escapeHTML(playerName(preview.lineup[index])) : "OPEN"}</strong></div>`).join("");
+  const previewLineup = resolvedStarterLineup();
+  document.getElementById("starterPreview").innerHTML = formation.positions.map((position, index) => `<button type="button" data-starter-position="${index}" class="${previewLineup[index] ? "" : "open"} ${selectedStarterPosition === index ? "selected" : ""}" aria-pressed="${selectedStarterPosition === index}"><small>${position.label}</small><strong>${previewLineup[index] ? escapeHTML(playerName(previewLineup[index])) : "OPEN"}</strong></button>`).join("");
+  document.getElementById("starterHelp").textContent = selectedStarterPosition === null ? "Tap any starter to change them." : `Choose an available player for ${formation.positions[selectedStarterPosition].label}.`;
   const warning = document.getElementById("setupWarning");
   warning.textContent = gameState.present.length < gameState.teamSize ? `You can start, but the lineup will have ${gameState.teamSize - gameState.present.length} open spot${gameState.teamSize - gameState.present.length === 1 ? "" : "s"}.` : "";
   document.getElementById("startGame").disabled = gameState.present.length === 0;
@@ -343,19 +368,42 @@ function setMatchTiming(periodCount, periodMinutes, preset = "custom") {
   resetTimingProgress(); renderGame();
 }
 
-gameSelect.addEventListener("change", () => { stopClock(); gameState.game = Number(gameSelect.value); gameState.quarter = 0; gameState.editingSession = false; gameState.plan = null; gameState.current = null; gameState.log = []; gameState.playingSeconds = {}; gameState.periodPlayingSeconds = {}; gameState.seconds = periodDurationSeconds(); renderGame(); });
-document.getElementById("formatPicker").addEventListener("click", (event) => { const button = event.target.closest("[data-format]"); if (!button || button.dataset.format === gameState.format) return; gameState.format = button.dataset.format; gameState.teamSize = FORMAT_SIZES[gameState.format][0]; gameState.formation = FORMATIONS[gameState.teamSize][0].id; const presetId = gameState.format === "indoor" ? "psa-indoor-2" : "psa-2"; const timing = TIMING_PRESETS[presetId]; setMatchTiming(timing.periodCount, timing.periodMinutes, presetId); showToast(`${gameState.format === "indoor" ? "Indoor 9v9" : "Outdoor 7v7"} rules loaded`); });
-document.getElementById("teamSizePicker").addEventListener("click", (event) => { const button = event.target.closest("[data-team-size]"); if (!button) return; gameState.teamSize = Number(button.dataset.teamSize); gameState.formation = FORMATIONS[gameState.teamSize][0].id; gameState.plan = null; gameState.current = null; renderAttendance(); });
-document.getElementById("formationSelect").addEventListener("change", (event) => { gameState.formation = event.target.value; gameState.plan = null; gameState.current = null; renderAttendance(); });
+gameSelect.addEventListener("change", () => { stopClock(); gameState.game = Number(gameSelect.value); gameState.quarter = 0; gameState.editingSession = false; gameState.starterLineup = null; selectedStarterPosition = null; gameState.plan = null; gameState.current = null; gameState.log = []; gameState.playingSeconds = {}; gameState.periodPlayingSeconds = {}; gameState.seconds = periodDurationSeconds(); renderGame(); });
+document.getElementById("formatPicker").addEventListener("click", (event) => { const button = event.target.closest("[data-format]"); if (!button || button.dataset.format === gameState.format) return; gameState.format = button.dataset.format; gameState.teamSize = FORMAT_SIZES[gameState.format][0]; gameState.formation = FORMATIONS[gameState.teamSize][0].id; gameState.starterLineup = null; selectedStarterPosition = null; const presetId = gameState.format === "indoor" ? "psa-indoor-2" : "psa-2"; const timing = TIMING_PRESETS[presetId]; setMatchTiming(timing.periodCount, timing.periodMinutes, presetId); showToast(`${gameState.format === "indoor" ? "Indoor 9v9" : "Outdoor 7v7"} rules loaded`); });
+document.getElementById("teamSizePicker").addEventListener("click", (event) => { const button = event.target.closest("[data-team-size]"); if (!button) return; gameState.teamSize = Number(button.dataset.teamSize); gameState.formation = FORMATIONS[gameState.teamSize][0].id; gameState.starterLineup = null; selectedStarterPosition = null; gameState.plan = null; gameState.current = null; renderAttendance(); });
+document.getElementById("formationSelect").addEventListener("change", (event) => { gameState.formation = event.target.value; gameState.starterLineup = null; selectedStarterPosition = null; gameState.plan = null; gameState.current = null; renderAttendance(); });
 document.getElementById("timingPreset").addEventListener("change", (event) => { const preset = TIMING_PRESETS[event.target.value]; if (!preset) { gameState.timingPreset = "custom"; saveGame(); return; } setMatchTiming(preset.periodCount, preset.periodMinutes, event.target.value); showToast(`${preset.periodCount === 2 ? "Halves" : "Quarters"} set to ${preset.periodMinutes} minutes`); });
 document.getElementById("periodCountPicker").addEventListener("click", (event) => { const button = event.target.closest("[data-period-count]"); if (!button || Number(button.dataset.periodCount) === gameState.periodCount) return; setMatchTiming(Number(button.dataset.periodCount), gameState.periodMinutes); showToast("Custom match timing saved"); });
 document.getElementById("periodMinutes").addEventListener("change", (event) => { setMatchTiming(gameState.periodCount, Number(event.target.value)); showToast("Custom match timing saved"); });
-document.getElementById("attendanceGrid").addEventListener("click", (event) => { const button = event.target.closest("[data-player-id]"); if (!button) return; const id = button.dataset.playerId; gameState.present = gameState.present.includes(id) ? gameState.present.filter((item) => item !== id) : [...gameState.present, id]; renderAttendance(); });
-document.getElementById("selectAllPlayers").addEventListener("click", () => { gameState.present = gameState.present.length === allPlayers().length ? [] : allPlayers().map((player) => player.id); renderAttendance(); });
+document.getElementById("attendanceGrid").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-player-id]"); if (!button) return;
+  const id = button.dataset.playerId;
+  if (selectedStarterPosition !== null) {
+    if (!gameState.present.includes(id)) return;
+    const lineup = resolvedStarterLineup();
+    const otherPosition = lineup.indexOf(id);
+    const outgoing = lineup[selectedStarterPosition];
+    lineup[selectedStarterPosition] = id;
+    if (otherPosition >= 0 && otherPosition !== selectedStarterPosition) lineup[otherPosition] = outgoing;
+    gameState.starterLineup = lineup;
+    selectedStarterPosition = null;
+    showToast(`${playerName(id)} added to the starting lineup`);
+    renderAttendance(); return;
+  }
+  gameState.present = gameState.present.includes(id) ? gameState.present.filter((item) => item !== id) : [...gameState.present, id];
+  renderAttendance();
+});
+document.getElementById("starterPreview").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-starter-position]"); if (!button) return;
+  const position = Number(button.dataset.starterPosition);
+  selectedStarterPosition = selectedStarterPosition === position ? null : position;
+  renderAttendance();
+});
+document.getElementById("selectAllPlayers").addEventListener("click", () => { selectedStarterPosition = null; gameState.present = gameState.present.length === allPlayers().length ? [] : allPlayers().map((player) => player.id); renderAttendance(); });
 document.getElementById("startGame").addEventListener("click", () => {
   const resumeCurrentPeriod = Boolean(gameState.editingSession && gameState.current);
   const previousLineup = resumeCurrentPeriod ? currentLineup() : [];
-  gameState.plan = buildPlan(); gameState.present.forEach((id) => { gameState.playingSeconds[id] ||= 0; }); gameState.live = true;
+  gameState.plan = planWithEditedStarters(); gameState.present.forEach((id) => { gameState.playingSeconds[id] ||= 0; }); gameState.live = true;
   const setup = `${gameState.format === "indoor" ? "Indoor" : "Outdoor"} ${gameState.teamSize}v${gameState.teamSize} · ${activeFormation().name} · ${gameState.periodCount} × ${gameState.periodMinutes} min`;
   gameState.log.unshift({ id: crypto.randomUUID?.() || String(Date.now()), type: gameState.log.length ? "attendance" : "start", at: Date.now(), quarter: gameState.quarter, remainingSeconds: gameState.seconds, time: `${periodShort()} · ${clockText()}`, text: gameState.log.length ? `Attendance updated · ${gameState.present.length} players · ${setup}` : `Game started · ${setup} · ${gameState.present.length} players` });
   if (resumeCurrentPeriod) {
