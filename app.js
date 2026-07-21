@@ -10,6 +10,10 @@ let customPlayers;
 let playerOverrides;
 try { customPlayers = JSON.parse(localStorage.getItem(ROSTER_KEY) || "[]"); } catch { customPlayers = []; }
 try { playerOverrides = JSON.parse(localStorage.getItem(PLAYER_OVERRIDES_KEY) || "{}"); } catch { playerOverrides = {}; }
+if (playerOverrides["seed-atar"]?.name === "Avyaan") {
+  playerOverrides["seed-atar"] = { ...playerOverrides["seed-atar"], name: "Atar" };
+  localStorage.setItem(PLAYER_OVERRIDES_KEY, JSON.stringify(playerOverrides));
+}
 const allPlayers = () => [...seedPlayers.map((player) => ({ ...player, ...(playerOverrides[player.id] || {}) })), ...customPlayers].filter((player) => !player.archived);
 const playerById = (id) => allPlayers().find((player) => player.id === id);
 const idForName = (name) => allPlayers().find((player) => player.name === name || player.sourceName === name)?.id;
@@ -514,11 +518,12 @@ async function loadSharedPlayerProfiles() {
     if (!response.ok) return;
     const payload = await response.json();
     Object.entries(payload.profiles || {}).forEach(([id, profile]) => {
-      if (id.startsWith("seed-") && newerProfile(profile, playerOverrides[id])) playerOverrides[id] = profile;
+      const normalizedProfile = id === "seed-atar" && profile.name === "Avyaan" ? { ...profile, name: "Atar" } : profile;
+      if (id.startsWith("seed-") && newerProfile(normalizedProfile, playerOverrides[id])) playerOverrides[id] = normalizedProfile;
       if (id.startsWith("custom-")) {
         const index = customPlayers.findIndex((player) => player.id === id);
-        if (index < 0) customPlayers.push(profile);
-        else if (newerProfile(profile, customPlayers[index])) customPlayers[index] = { ...customPlayers[index], ...profile };
+        if (index < 0) customPlayers.push(normalizedProfile);
+        else if (newerProfile(normalizedProfile, customPlayers[index])) customPlayers[index] = { ...customPlayers[index], ...normalizedProfile };
       }
     });
     localStorage.setItem(PLAYER_OVERRIDES_KEY, JSON.stringify(playerOverrides));
