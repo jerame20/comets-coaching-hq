@@ -1,24 +1,6 @@
 {
-  "updatedAt": "7/21/2026 13:26:59",
+  "updatedAt": "7/21/2026 11:53:28",
   "posts": [
-    {
-      "id": "post-46968c74-0d05-4f9b-90b0-e45ccbaae94d",
-      "author": "Bryan",
-      "title": "Improve mobile app width and responsiveness",
-      "category": "App idea",
-      "body": "Sometimes on mobile screens, the app is zoomed in just a little too much and has a slight amount of horizontal scroll.",
-      "created": "7/21/2026 13:26:59",
-      "comments": []
-    },
-    {
-      "id": "post-48ec8bed-2e43-4dc9-80ec-1cd7c33f1705",
-      "author": "Bryan",
-      "title": "Top nav improvement",
-      "category": "App idea",
-      "body": "When the app loads right now, you can’t see the full top nav until you click the other link that shows up.",
-      "created": "7/21/2026 13:25:33",
-      "comments": []
-    },
     {
       "id": "post-2f7073a4-5a2b-473a-951e-744aca94e044",
       "author": "Jeremy",
