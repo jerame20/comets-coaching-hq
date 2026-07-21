@@ -196,7 +196,16 @@ function playingTimeColor(seconds) {
   const progress = Math.min(1, Math.max(0, seconds / 720));
   const hue = Math.round(120 * (1 - progress));
   const lightness = progress < .35 ? 36 : progress < .72 ? 43 : 47;
-  return { color: `hsl(${hue} 78% ${lightness}%)`, text: progress >= .34 && progress <= .66 ? "#11151d" : "#ffffff" };
+  const saturation = .78;
+  const channel = (offset) => {
+    const k = (offset + hue / 30) % 12;
+    const a = saturation * Math.min(lightness / 100, 1 - lightness / 100);
+    return lightness / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+  };
+  const luminance = [channel(0), channel(8), channel(4)].map((value) => value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [.2126, .7152, .0722][index], 0);
+  const darkContrast = (luminance + .05) / .055;
+  const lightContrast = 1.05 / (luminance + .05);
+  return { color: `hsl(${hue} 78% ${lightness}%)`, text: darkContrast > lightContrast ? "#07101e" : "#ffffff" };
 }
 function rankedBench(bench = currentBench()) {
   const selectedRole = selectedPosition === null ? null : activeFormation().positions[selectedPosition]?.label;
