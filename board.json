@@ -1,4 +1,14 @@
 {
-  "updatedAt": "",
-  "posts": []
+  "updatedAt": "7/21/2026 11:47:08",
+  "posts": [
+    {
+      "id": "post-darwin-qa-20260721",
+      "author": "Darwin QA",
+      "title": "Board pipeline test",
+      "category": "Other",
+      "body": "Automated end-to-end verification. Safe to remove.",
+      "created": "7/21/2026 11:47:08",
+      "comments": []
+    }
+  ]
 }
