@@ -13,6 +13,7 @@ A dependency-free, mobile-first coaching app for the Comets roster, rotations, p
 ## Game-day app
 
 - Attendance-first check-in with large touch targets and a generated starting lineup
+- Indoor 5v5/6v6/7v7 and outdoor 7v7/9v9/11v11 match formats, with two formations per size
 - Add-player flow with device-local roster persistence
 - Six games and four attendance-aware planned quarters per game
 - Large 2-3-1 field controls and bench buttons

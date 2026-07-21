@@ -124,8 +124,13 @@
           <button class="ghost-action" id="resetGame" type="button">Reset</button>
         </div>
         <section class="gameday-setup" id="gamedaySetup">
-          <div class="setup-step"><span>1</span><div><strong>Choose the game</strong><small>The saved plan is the starting point.</small></div></div>
-          <label class="game-select-label">Game<select id="gameSelect" aria-label="Choose game"></select></label>
+          <div class="setup-step"><span>1</span><div><strong>Set the match</strong><small>Choose indoor or outdoor, team size, and formation.</small></div></div>
+          <div class="match-setup-card">
+            <label>Game<select id="gameSelect" aria-label="Choose game"></select></label>
+            <fieldset><legend>Format</legend><div class="choice-pills" id="formatPicker"><button type="button" data-format="indoor">Indoor</button><button type="button" data-format="outdoor">Outdoor</button></div></fieldset>
+            <fieldset><legend>Players on field</legend><div class="choice-pills" id="teamSizePicker"></div></fieldset>
+            <label>Formation<select id="formationSelect" aria-label="Choose formation"></select></label>
+          </div>
           <div class="setup-step"><span>2</span><div><strong>Who showed up?</strong><small>Tap each kid who is here, or use Select all.</small></div></div>
           <div class="attendance-toolbar"><strong id="attendanceCount"></strong><div><button id="selectAllPlayers" type="button">Select all</button><button class="add-player-trigger" type="button">+ Add player</button></div></div>
           <div class="attendance-grid attendance-grid-large" id="attendanceGrid"></div>
@@ -137,7 +142,7 @@
 
         <section class="live-game" id="liveGame" hidden>
           <div class="live-status">
-            <div><small>Live now</small><strong id="liveGameLabel">Game 1 · Q1</strong></div>
+            <div><small>Live now</small><strong id="liveGameLabel">Game 1 · Q1</strong><span id="liveFormationLabel"></span></div>
             <button id="editAttendance" type="button">Edit attendance</button>
           </div>
           <div class="quarter-picker" id="quarterPicker" aria-label="Choose quarter"></div>
