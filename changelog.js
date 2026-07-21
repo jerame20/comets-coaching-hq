@@ -1,6 +1,16 @@
 window.COMETS_APP = {
-  version: "1.4.0",
+  version: "1.4.1",
   releases: [
+    {
+      version: "1.4.1",
+      date: "July 21, 2026",
+      title: "Clearer mobile Board replies",
+      summary: "Voice dictation no longer covers the reply field on narrow screens.",
+      changes: [
+        "Moved the reply microphone beside the text field instead of overlaying it.",
+        "Kept the text field, microphone, and Reply button as separate full-size mobile controls."
+      ]
+    },
     {
       version: "1.4.0",
       date: "July 21, 2026",

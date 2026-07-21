@@ -415,6 +415,9 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 .comment-form { margin-top: 11px; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
 .comment-form textarea { width: 100%; min-height: 48px; padding: 12px 13px; resize: vertical; border: 1px solid var(--line); border-radius: 11px; background: white; color: var(--ink); font: inherit; font-size: 13px; line-height: 1.4; }
 .comment-form button { min-height: 48px; border-color: #1557c0; background: #1557c0; color: white; }
+.comment-form .dictation-field { min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) 48px; gap: 8px; align-items: end; }
+.comment-form .dictation-field textarea { grid-column: 1; min-width: 0; min-height: 56px; padding-right: 13px !important; }
+.comment-form .dictation-field .dictation-button { position: static; grid-column: 2; width: 48px; height: 48px; transform: none; }
 .board-empty { padding: 28px 20px; border: 1px dashed var(--line); border-radius: 18px; text-align: center; color: var(--muted); }
 .board-empty strong, .board-empty span { display: block; }
 .board-empty strong { color: var(--ink); font-size: 17px; }
@@ -642,6 +645,7 @@ html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
   .board-category { grid-column: 2; justify-self: start; }
   .comment-form { grid-template-columns: 1fr; }
   .comment-form button { width: 100%; }
+  .comment-form .dictation-field .dictation-button { width: 48px; }
   .version-banner { padding: 16px; }
   .release-card { padding: 16px; }
   .release-card header div { align-items: flex-start; flex-direction: column; gap: 2px; }
