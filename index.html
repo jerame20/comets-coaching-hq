@@ -136,17 +136,18 @@
           <div class="setup-step"><span>1</span><div><strong>Set the match</strong><small>Choose indoor or outdoor, team size, and formation.</small></div></div>
           <div class="match-setup-card">
             <label>Game<select id="gameSelect" aria-label="Choose game"></select></label>
-            <fieldset><legend>Format</legend><div class="choice-pills" id="formatPicker"><button type="button" data-format="indoor">Indoor</button><button type="button" data-format="outdoor">Outdoor</button></div></fieldset>
-            <fieldset><legend>Players on field</legend><div class="choice-pills" id="teamSizePicker"></div></fieldset>
+            <fieldset><legend>Format</legend><div class="choice-pills" id="formatPicker"><button type="button" data-format="indoor">Indoor · 9v9</button><button type="button" data-format="outdoor">Outdoor · 7v7</button></div></fieldset>
+            <fieldset id="teamSizeFieldset"><legend>Players on field</legend><div class="choice-pills" id="teamSizePicker"></div></fieldset>
             <label>Formation<select id="formationSelect" aria-label="Choose formation"></select></label>
             <label>Match timing<select id="timingPreset" aria-label="Choose a match timing preset">
+              <option value="psa-indoor-2">PSA Indoor 2nd grade · 2 × 20 min</option>
               <option value="psa-k1">PSA K–1st · 4 × 10 min</option>
               <option value="psa-2">PSA 2nd grade · 4 × 12 min</option>
               <option value="psa-34">PSA 3rd–4th · 2 × 25 min</option>
               <option value="psa-56">PSA 5th–6th · 2 × 30 min</option>
               <option value="psa-710">PSA 7th–10th · 2 × 35 min</option>
               <option value="custom">Custom timing</option>
-            </select><small class="timing-source">From the <a href="https://cdn.sanity.io/files/gwh42vb9/production/86ef7e8e6a6efdd7f4b266b41227613029c8791c.pdf" target="_blank" rel="noopener">official PSA outdoor rules</a>.</small></label>
+            </select><small class="timing-source">From the <a href="https://cdn.sanity.io/files/gwh42vb9/production/86ef7e8e6a6efdd7f4b266b41227613029c8791c.pdf" target="_blank" rel="noopener">official PSA soccer rules</a>.</small></label>
             <fieldset><legend>Periods</legend><div class="choice-pills" id="periodCountPicker"><button type="button" data-period-count="2">2 halves</button><button type="button" data-period-count="4">4 quarters</button></div></fieldset>
             <label>Minutes each<select id="periodMinutes" aria-label="Choose minutes per period"></select></label>
           </div>
@@ -206,6 +207,6 @@
     </dialog>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=18"></script>
+    <script src="app.js?v=19"></script>
   </body>
 </html>

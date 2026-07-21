@@ -100,8 +100,9 @@ const FORMATIONS = {
   9: [makeFormation("9-332", "3-3-2", [["LF","RF"],["LM","CM","RM"],["LD","CB","RD"],["GK"]]), makeFormation("9-323", "3-2-3", [["LF","ST","RF"],["LM","RM"],["LD","CB","RD"],["GK"]])],
   11: [makeFormation("11-433", "4-3-3", [["LF","ST","RF"],["LM","CM","RM"],["LB","LCB","RCB","RB"],["GK"]]), makeFormation("11-442", "4-4-2", [["LF","RF"],["LM","LCM","RCM","RM"],["LB","LCB","RCB","RB"],["GK"]])]
 };
-const FORMAT_SIZES = { indoor: [5,6,7], outdoor: [7,9,11] };
+const FORMAT_SIZES = { indoor: [9], outdoor: [7] };
 const TIMING_PRESETS = {
+  "psa-indoor-2": { periodCount: 2, periodMinutes: 20 },
   "psa-k1": { periodCount: 4, periodMinutes: 10 },
   "psa-2": { periodCount: 4, periodMinutes: 12 },
   "psa-34": { periodCount: 2, periodMinutes: 25 },
@@ -181,6 +182,7 @@ function renderAttendance() {
   const formation = activeFormation();
   document.querySelectorAll("[data-format]").forEach((button) => button.classList.toggle("active", button.dataset.format === gameState.format));
   document.getElementById("teamSizePicker").innerHTML = FORMAT_SIZES[gameState.format].map((size) => `<button type="button" data-team-size="${size}" class="${Number(gameState.teamSize) === size ? "active" : ""}">${size}v${size}</button>`).join("");
+  document.getElementById("teamSizeFieldset").hidden = FORMAT_SIZES[gameState.format].length === 1;
   document.getElementById("formationSelect").innerHTML = FORMATIONS[gameState.teamSize].map((item) => `<option value="${item.id}" ${item.id === gameState.formation ? "selected" : ""}>${item.name}</option>`).join("");
   document.getElementById("timingPreset").value = TIMING_PRESETS[gameState.timingPreset] ? gameState.timingPreset : "custom";
   document.querySelectorAll("[data-period-count]").forEach((button) => button.classList.toggle("active", Number(button.dataset.periodCount) === gameState.periodCount));
@@ -342,7 +344,7 @@ function setMatchTiming(periodCount, periodMinutes, preset = "custom") {
 }
 
 gameSelect.addEventListener("change", () => { stopClock(); gameState.game = Number(gameSelect.value); gameState.quarter = 0; gameState.editingSession = false; gameState.plan = null; gameState.current = null; gameState.log = []; gameState.playingSeconds = {}; gameState.periodPlayingSeconds = {}; gameState.seconds = periodDurationSeconds(); renderGame(); });
-document.getElementById("formatPicker").addEventListener("click", (event) => { const button = event.target.closest("[data-format]"); if (!button) return; gameState.format = button.dataset.format; gameState.teamSize = FORMAT_SIZES[gameState.format][0]; gameState.formation = FORMATIONS[gameState.teamSize][0].id; gameState.plan = null; gameState.current = null; renderAttendance(); });
+document.getElementById("formatPicker").addEventListener("click", (event) => { const button = event.target.closest("[data-format]"); if (!button || button.dataset.format === gameState.format) return; gameState.format = button.dataset.format; gameState.teamSize = FORMAT_SIZES[gameState.format][0]; gameState.formation = FORMATIONS[gameState.teamSize][0].id; const presetId = gameState.format === "indoor" ? "psa-indoor-2" : "psa-2"; const timing = TIMING_PRESETS[presetId]; setMatchTiming(timing.periodCount, timing.periodMinutes, presetId); showToast(`${gameState.format === "indoor" ? "Indoor 9v9" : "Outdoor 7v7"} rules loaded`); });
 document.getElementById("teamSizePicker").addEventListener("click", (event) => { const button = event.target.closest("[data-team-size]"); if (!button) return; gameState.teamSize = Number(button.dataset.teamSize); gameState.formation = FORMATIONS[gameState.teamSize][0].id; gameState.plan = null; gameState.current = null; renderAttendance(); });
 document.getElementById("formationSelect").addEventListener("change", (event) => { gameState.formation = event.target.value; gameState.plan = null; gameState.current = null; renderAttendance(); });
 document.getElementById("timingPreset").addEventListener("change", (event) => { const preset = TIMING_PRESETS[event.target.value]; if (!preset) { gameState.timingPreset = "custom"; saveGame(); return; } setMatchTiming(preset.periodCount, preset.periodMinutes, event.target.value); showToast(`${preset.periodCount === 2 ? "Halves" : "Quarters"} set to ${preset.periodMinutes} minutes`); });
@@ -361,6 +363,7 @@ document.getElementById("startGame").addEventListener("click", () => {
     const bench = gameState.present.filter((id) => !lineup.includes(id));
     gameState.current = { lineup, bench }; gameState.editingSession = false; selectedPosition = null; selectedBenchId = null; renderGame();
   } else { gameState.editingSession = false; loadQuarter(gameState.quarter, false); }
+  requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
 });
 document.getElementById("editAttendance").addEventListener("click", () => { stopClock(); gameState.live = false; gameState.editingSession = true; renderGame(); });
 document.getElementById("quarterPicker").addEventListener("click", (event) => { const button = event.target.closest("button"); if (!button || Number(button.dataset.quarter) === gameState.quarter) return; loadQuarter(Number(button.dataset.quarter)); });
