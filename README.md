@@ -12,10 +12,12 @@ A dependency-free, mobile-first coaching app for the Comets roster, rotations, p
 
 ## Game-day app
 
-- Six games and four planned quarters per game
+- Attendance-first check-in with large touch targets and a generated starting lineup
+- Add-player flow with device-local roster persistence
+- Six games and four attendance-aware planned quarters per game
 - Large 2-3-1 field controls and bench buttons
 - Tap field player, then bench player, to record a substitution
-- Attendance/absence toggles and open-position handling
+- One-tap next-quarter rotation loading and open-position handling
 - 12-minute quarter clock, screen wake lock when available, vibration at zero, and substitution log
 - Local persistence and service-worker caching for refresh/offline resilience
 
