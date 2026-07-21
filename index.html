@@ -4,10 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#173b2b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="robots" content="noindex, nofollow" />
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
   </head>
   <body>
     <header class="site-header">
@@ -28,9 +32,10 @@
       <a href="#home" data-tab="home">Home</a>
       <a href="#players" data-tab="players">Players</a>
       <a href="#rotation" data-tab="rotation">Rotation</a>
-      <a href="#season" data-tab="season">Season</a>
+      <a href="#season" data-tab="season">Coverage</a>
       <a href="#roles" data-tab="roles">Roles</a>
       <a href="#gameday" data-tab="gameday">Game day</a>
+      <a href="#feedback" data-tab="feedback">Coach note</a>
     </nav>
 
     <main>
@@ -65,7 +70,7 @@
           <div class="quick-grid">
             <a class="quick-card coral" href="#players">
               <span class="card-icon">01</span>
-              <div><strong>Player development</strong><small>Notes, focus areas, and progress</small></div>
+              <div><strong>Player rotation map</strong><small>Roster, role anchors, and emphasis</small></div>
               <b aria-hidden="true">↗</b>
             </a>
             <a class="quick-card gold" href="#rotation">
@@ -88,19 +93,68 @@
 
         <aside class="privacy-note">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2 4.5 5v5.3c0 5 3.2 9.7 7.5 11.7 4.3-2 7.5-6.7 7.5-11.7V5L12 2Zm0 3.1 4.5 1.8v3.4c0 3.6-1.8 7-4.5 8.7-2.7-1.7-4.5-5.1-4.5-8.7V6.9L12 5.1Z"/></svg>
-          <div><strong>Player information stays private.</strong><span>The hub is a launcher. Names and notes remain inside the Google Sheet and follow its sharing permissions.</span></div>
+          <div><strong>Public planning data, private coach observations.</strong><span>Names, rotations, and role coverage are available here. Detailed strengths and development notes remain in the private Google Sheet.</span></div>
         </aside>
       </section>
 
-      <section class="view sheet-view" id="players" data-view="players" data-gid="0" data-title="Player development" data-description="Track strengths, growth areas, confidence, and the next useful challenge for each player."></section>
-      <section class="view sheet-view" id="rotation" data-view="rotation" data-gid="1187879702" data-title="Game rotation" data-description="Quarter-by-quarter positions built for balanced development and a sane sideline."></section>
-      <section class="view sheet-view" id="season" data-view="season" data-gid="1891978176" data-title="Season coverage" data-description="See who has played where and keep development balanced over the full season."></section>
-      <section class="view sheet-view" id="roles" data-view="roles" data-gid="1273994141" data-title="Role guide" data-description="Simple responsibilities and coaching cues for every position on the field."></section>
-      <section class="view sheet-view" id="gameday" data-view="gameday" data-gid="671064886" data-title="Game-day use" data-description="The quick-reference view for substitutions, assignments, and in-game adjustments."></section>
+      <section class="view data-view" id="players" data-view="players" data-title="Players">
+        <div class="page-head"><span>Roster</span><h1>Player rotation map</h1><p>Neutral planning information from the live workbook. Detailed coach observations stay in the private Sheet.</p></div>
+        <div class="player-grid" id="playerGrid"></div>
+      </section>
+
+      <section class="view data-view" id="rotation" data-view="rotation" data-title="Rotation">
+        <div class="page-head"><span>Six-game cycle</span><h1>Planned rotations</h1><p>Pick a game to see all four quarters. Use Game day when you need to make live changes.</p></div>
+        <div class="game-picker" id="rotationGamePicker" aria-label="Choose game"></div>
+        <div class="rotation-grid" id="rotationGrid"></div>
+      </section>
+
+      <section class="view data-view" id="season" data-view="season" data-title="Coverage">
+        <div class="page-head"><span>Development balance</span><h1>Season coverage</h1><p>Every player receives experience in all seven positions across the planned cycle.</p></div>
+        <div class="coverage-list" id="coverageList"></div>
+      </section>
+
+      <section class="view data-view" id="roles" data-view="roles" data-title="Roles">
+        <div class="page-head"><span>2-3-1 formation</span><h1>Role guide</h1><p>One job, one coaching cue, and one common mistake for every position.</p></div>
+        <div class="role-grid" id="roleGrid"></div>
+      </section>
+
+      <section class="view game-app" id="gameday" data-view="gameday" data-title="Game day">
+        <div class="game-app-head">
+          <div><span>Live sideline mode</span><h1>Substitution tracker</h1></div>
+          <button class="ghost-action" id="resetGame" type="button">Reset</button>
+        </div>
+        <div class="game-controls">
+          <label>Game<select id="gameSelect" aria-label="Choose game"></select></label>
+          <div class="quarter-picker" id="quarterPicker" aria-label="Choose quarter"></div>
+        </div>
+        <div class="game-clock">
+          <div><span>Quarter clock</span><strong id="clockDisplay">12:00</strong></div>
+          <button class="clock-button" id="clockButton" type="button">Start</button>
+        </div>
+        <div class="swap-instruction" id="swapInstruction">Tap a player on the field, then tap a bench player to swap.</div>
+        <div class="lineup-layout">
+          <section class="lineup-panel"><div class="panel-title"><h2>On the field</h2><span>7 players</span></div><div class="formation" id="formation"></div></section>
+          <section class="bench-panel"><div class="panel-title"><h2>Bench</h2><span id="benchCount"></span></div><div class="bench-grid" id="benchGrid"></div></section>
+        </div>
+        <details class="attendance-panel"><summary>Attendance and absences</summary><p>Tap anyone who is absent. Their planned field spot will open for a replacement.</p><div class="attendance-grid" id="attendanceGrid"></div></details>
+        <section class="sub-log"><div class="panel-title"><h2>Substitution log</h2><button id="clearLog" type="button">Clear</button></div><ol id="subLog"></ol></section>
+      </section>
+
+      <section class="view data-view" id="feedback" data-view="feedback" data-title="Coach note">
+        <div class="page-head"><span>Coach feedback</span><h1>Capture it while it’s fresh</h1><p>Write the note here, save it on this phone, then share it directly to GroupMe, Messages, or email.</p></div>
+        <form class="feedback-form" id="feedbackForm">
+          <div class="form-row"><label>Your name<input id="coachName" name="coach" autocomplete="name" required placeholder="Brian"></label><label>Note type<select id="noteType" name="type"><option>Player observation</option><option>Game note</option><option>Practice idea</option><option>Scheduling</option><option>Other</option></select></label></div>
+          <label>Player or topic<input id="noteSubject" name="subject" placeholder="Optional"></label>
+          <label>What did you notice?<textarea id="noteText" name="note" rows="6" required placeholder="Specific, constructive, and useful..."></textarea></label>
+          <div class="form-actions"><button class="button primary" type="submit">Save note</button><button class="button secondary" id="shareDraft" type="button">Share note</button></div>
+        </form>
+        <section class="saved-notes"><div class="panel-title"><h2>Saved on this device</h2><span id="savedCount"></span></div><div id="savedNotes"></div></section>
+      </section>
     </main>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
+    <script src="data.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
