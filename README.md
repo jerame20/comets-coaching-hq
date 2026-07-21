@@ -15,13 +15,15 @@ A dependency-free, mobile-first coaching app for the Comets roster, rotations, p
 - Attendance-first check-in with large touch targets and a generated starting lineup
 - Indoor 5v5/6v6/7v7 and outdoor 7v7/9v9/11v11 match formats, with two formations per size
 - Add-player flow with device-local roster persistence
-- Six games and four attendance-aware planned quarters per game
+- Six games with attendance-aware plans for either halves or quarters
 - Large 2-3-1 field controls and bench buttons
 - Tap field player, then bench player, to record a substitution
-- Mid-quarter substitutions settle the game clock instantly and preserve structured in/out timestamps
-- Live per-player playing-time totals persist across quarters, refreshes, pauses, and brief screen locks
-- One-tap next-quarter rotation loading and open-position handling
-- 12-minute quarter clock, screen wake lock when available, vibration at zero, and substitution log
+- Mid-period substitutions settle the game clock instantly and preserve structured in/out timestamps
+- Live per-player playing-time totals persist across periods, refreshes, pauses, and brief screen locks
+- One-tap next-period rotation loading and open-position handling
+- PSA timing presets (4×10, 4×12, 2×25, 2×30, and 2×35) plus custom halves/quarters and period length
+- Field-player colors use cumulative game minutes: red at the planned rotation target (25% of the game), purple at 50%, and pink at 75%
+- Configurable clock, screen wake lock when available, vibration at zero, and substitution log
 - Local persistence and service-worker caching for refresh/offline resilience
 
 ## Coach notes

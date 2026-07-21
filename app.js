@@ -101,15 +101,25 @@ const FORMATIONS = {
   11: [makeFormation("11-433", "4-3-3", [["LF","ST","RF"],["LM","CM","RM"],["LB","LCB","RCB","RB"],["GK"]]), makeFormation("11-442", "4-4-2", [["LF","RF"],["LM","LCM","RCM","RM"],["LB","LCB","RCB","RB"],["GK"]])]
 };
 const FORMAT_SIZES = { indoor: [5,6,7], outdoor: [7,9,11] };
+const TIMING_PRESETS = {
+  "psa-k1": { periodCount: 4, periodMinutes: 10 },
+  "psa-2": { periodCount: 4, periodMinutes: 12 },
+  "psa-34": { periodCount: 2, periodMinutes: 25 },
+  "psa-56": { periodCount: 2, periodMinutes: 30 },
+  "psa-710": { periodCount: 2, periodMinutes: 35 }
+};
+const PERIOD_MINUTES = [8,10,12,15,20,25,30,35,40,45];
 const STORAGE_KEY = "comets-gameday-v3";
-const defaultGameState = () => ({ version: 6, sessionId: crypto.randomUUID?.() || String(Date.now()), game: 0, quarter: 0, format: "outdoor", teamSize: 7, formation: "7-231", present: [], live: false, editingSession: false, plan: null, current: null, log: [], playingSeconds: {}, quarterPlayingSeconds: {}, runningSince: null, seconds: 720 });
+const defaultGameState = () => ({ version: 7, sessionId: crypto.randomUUID?.() || String(Date.now()), game: 0, quarter: 0, format: "outdoor", teamSize: 7, formation: "7-231", timingPreset: "psa-2", periodCount: 4, periodMinutes: 12, present: [], live: false, editingSession: false, plan: null, current: null, log: [], playingSeconds: {}, periodPlayingSeconds: {}, runningSince: null, seconds: 720 });
 let gameState;
 try { gameState = { ...defaultGameState(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; } catch { gameState = defaultGameState(); }
 if (!FORMAT_SIZES[gameState.format]?.includes(Number(gameState.teamSize))) { gameState.format = "outdoor"; gameState.teamSize = 7; }
 if (!FORMATIONS[gameState.teamSize]?.some((formation) => formation.id === gameState.formation)) gameState.formation = FORMATIONS[gameState.teamSize][0].id;
-gameState.version = 6;
+if (![2,4].includes(Number(gameState.periodCount))) gameState.periodCount = 4;
+if (!PERIOD_MINUTES.includes(Number(gameState.periodMinutes))) gameState.periodMinutes = 12;
+gameState.version = 7;
 gameState.playingSeconds ||= {};
-gameState.quarterPlayingSeconds ||= {};
+gameState.periodPlayingSeconds ||= gameState.quarterPlayingSeconds || {};
 gameState.runningSince ||= null;
 let selectedPosition = null;
 let selectedBenchId = null;
@@ -120,11 +130,18 @@ const gameSelect = document.getElementById("gameSelect");
 const setupScreen = document.getElementById("gamedaySetup");
 const liveScreen = document.getElementById("liveGame");
 gameSelect.innerHTML = DATA.games.map((_, index) => `<option value="${index}">Game ${index + 1}</option>`).join("");
-document.getElementById("quarterPicker").innerHTML = [0,1,2,3].map((index) => `<button type="button" data-quarter="${index}">Q${index + 1}</button>`).join("");
 
 function saveGame() { localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState)); }
 function presentPlayers() { return gameState.present.map(playerById).filter(Boolean); }
 function activeFormation() { return FORMATIONS[gameState.teamSize].find((formation) => formation.id === gameState.formation) || FORMATIONS[gameState.teamSize][0]; }
+function periodDurationSeconds() { return Number(gameState.periodMinutes) * 60; }
+function totalGameSeconds() { return Number(gameState.periodCount) * periodDurationSeconds(); }
+function rotationTargetSeconds() { return totalGameSeconds() / 4; }
+function periodWord(index = gameState.quarter) { return `${gameState.periodCount === 2 ? "Half" : "Quarter"} ${index + 1}`; }
+function periodShort(index = gameState.quarter) { return `${gameState.periodCount === 2 ? "H" : "Q"}${index + 1}`; }
+function renderPeriodPicker() {
+  document.getElementById("quarterPicker").innerHTML = Array.from({ length: gameState.periodCount }, (_, index) => `<button type="button" data-quarter="${index}" class="${index === gameState.quarter ? "active" : ""}">${periodShort(index)}</button>`).join("");
+}
 function roleMatches(player, position) {
   const roles = player?.anchors?.split("/").map((value) => value.trim()) || [];
   const aliases = { CB: ["LD","RD"], LB: ["LD"], LCB: ["LD","RD"], RCB: ["LD","RD"], RB: ["RD"], LF: ["LM","ST"], RF: ["RM","ST"], LCM: ["CM","LM"], RCM: ["CM","RM"] };
@@ -134,11 +151,13 @@ function buildPlan() {
   const presentIds = presentPlayers().map((player) => player.id);
   const totalStarts = Object.fromEntries(presentIds.map((id) => [id, 0]));
   const positions = activeFormation().positions;
-  return DATA.games[gameState.game].map((plannedQuarter) => {
+  const sourceRotations = DATA.games[gameState.game];
+  const plannedPeriods = gameState.periodCount === 2 ? [sourceRotations[0], sourceRotations[2]] : sourceRotations;
+  return plannedPeriods.map((plannedPeriod) => {
     const used = new Set();
     const lineup = positions.map((position) => {
       const plannedIndex = DATA.positions.indexOf(position.label);
-      const name = plannedIndex >= 0 ? plannedQuarter[plannedIndex] : null;
+      const name = plannedIndex >= 0 ? plannedPeriod[plannedIndex] : null;
       const id = idForName(name);
       if (!id || !presentIds.includes(id) || used.has(id)) return null;
       used.add(id); return id;
@@ -163,6 +182,9 @@ function renderAttendance() {
   document.querySelectorAll("[data-format]").forEach((button) => button.classList.toggle("active", button.dataset.format === gameState.format));
   document.getElementById("teamSizePicker").innerHTML = FORMAT_SIZES[gameState.format].map((size) => `<button type="button" data-team-size="${size}" class="${Number(gameState.teamSize) === size ? "active" : ""}">${size}v${size}</button>`).join("");
   document.getElementById("formationSelect").innerHTML = FORMATIONS[gameState.teamSize].map((item) => `<option value="${item.id}" ${item.id === gameState.formation ? "selected" : ""}>${item.name}</option>`).join("");
+  document.getElementById("timingPreset").value = TIMING_PRESETS[gameState.timingPreset] ? gameState.timingPreset : "custom";
+  document.querySelectorAll("[data-period-count]").forEach((button) => button.classList.toggle("active", Number(button.dataset.periodCount) === gameState.periodCount));
+  document.getElementById("periodMinutes").innerHTML = PERIOD_MINUTES.map((minutes) => `<option value="${minutes}" ${minutes === gameState.periodMinutes ? "selected" : ""}>${minutes} minutes</option>`).join("");
   document.getElementById("attendanceGrid").innerHTML = players.map((player) => `<button type="button" data-player-id="${player.id}" class="${gameState.present.includes(player.id) ? "present" : ""}" aria-pressed="${gameState.present.includes(player.id)}"><span>${gameState.present.includes(player.id) ? "✓" : ""}</span>${escapeHTML(player.name)}</button>`).join("");
   document.getElementById("attendanceCount").textContent = `${gameState.present.length} of ${players.length} selected`;
   document.getElementById("selectAllPlayers").textContent = gameState.present.length === players.length ? "Clear all" : "Select all";
@@ -189,23 +211,29 @@ function renderPlayingTime() {
   document.getElementById("playingTimeGrid").innerHTML = players.map((player) => `<article class="time-card ${onField.has(player.id) ? "on-field" : ""}"><div><strong>${escapeHTML(player.name)}</strong><span>${onField.has(player.id) ? "On field" : "Bench"}</span></div><b>${formatDuration(gameState.playingSeconds[player.id])}</b></article>`).join("");
   document.getElementById("teamTimeStatus").textContent = clockRunning ? `Live · ${onField.size} playing` : "Clock paused";
 }
-function currentQuarterPlayingSeconds(id) {
-  return gameState.quarterPlayingSeconds?.[gameState.quarter]?.[id] || 0;
+function currentPeriodPlayingSeconds(id) {
+  return gameState.periodPlayingSeconds?.[gameState.quarter]?.[id] || 0;
 }
 function playingTimeColor(seconds) {
-  const progress = Math.min(1, Math.max(0, seconds / 720));
-  const hue = Math.round(120 * (1 - progress));
-  const lightness = progress < .35 ? 36 : progress < .72 ? 43 : 47;
-  const saturation = .78;
-  const channel = (offset) => {
-    const k = (offset + hue / 30) % 12;
-    const a = saturation * Math.min(lightness / 100, 1 - lightness / 100);
-    return lightness / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
-  };
-  const luminance = [channel(0), channel(8), channel(4)].map((value) => value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [.2126, .7152, .0722][index], 0);
+  const stops = [
+    { at: 0, color: [24,164,75], stage: "Fresh" },
+    { at: .33, color: [214,197,28], stage: "Building" },
+    { at: .66, color: [241,143,28], stage: "Watch" },
+    { at: 1, color: [226,61,61], stage: "Sub due" },
+    { at: 2, color: [139,76,199], stage: "Overdue" },
+    { at: 3, color: [240,79,154], stage: "75% game" }
+  ];
+  const progress = Math.min(3, Math.max(0, seconds / Math.max(1, rotationTargetSeconds())));
+  const upperIndex = Math.min(stops.length - 1, Math.max(1, stops.findIndex((stop) => progress <= stop.at)));
+  const lower = stops[upperIndex - 1]; const upper = stops[upperIndex];
+  const mix = upper.at === lower.at ? 0 : (progress - lower.at) / (upper.at - lower.at);
+  const rgb = lower.color.map((channel, index) => Math.round(channel + (upper.color[index] - channel) * mix));
+  const linear = rgb.map((value) => value / 255).map((value) => value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+  const luminance = linear.reduce((sum, value, index) => sum + value * [.2126, .7152, .0722][index], 0);
   const darkContrast = (luminance + .05) / .055;
   const lightContrast = 1.05 / (luminance + .05);
-  return { color: `hsl(${hue} 78% ${lightness}%)`, text: darkContrast > lightContrast ? "#07101e" : "#ffffff" };
+  const stage = [...stops].reverse().find((stop) => progress >= stop.at)?.stage || stops[0].stage;
+  return { color: `rgb(${rgb.join(",")})`, text: darkContrast > lightContrast ? "#07101e" : "#ffffff", stage };
 }
 function rankedBench(bench = currentBench()) {
   const selectedRole = selectedPosition === null ? null : activeFormation().positions[selectedPosition]?.label;
@@ -215,7 +243,7 @@ function rankedBench(bench = currentBench()) {
       if (roleDifference) return roleDifference;
     }
     return (gameState.playingSeconds[a] || 0) - (gameState.playingSeconds[b] || 0)
-      || currentQuarterPlayingSeconds(a) - currentQuarterPlayingSeconds(b)
+      || currentPeriodPlayingSeconds(a) - currentPeriodPlayingSeconds(b)
       || playerName(a).localeCompare(playerName(b));
   });
 }
@@ -225,7 +253,7 @@ function recommendedOutgoingPosition(incoming) {
   return lineup.map((id, index) => ({ id, index, position: activeFormation().positions[index]?.label }))
     .sort((a, b) => Number(Boolean(a.id)) - Number(Boolean(b.id))
       || Number(roleMatches(playerById(incoming), b.position)) - Number(roleMatches(playerById(incoming), a.position))
-      || currentQuarterPlayingSeconds(b.id) - currentQuarterPlayingSeconds(a.id)
+      || currentPeriodPlayingSeconds(b.id) - currentPeriodPlayingSeconds(a.id)
       || (gameState.playingSeconds[b.id] || 0) - (gameState.playingSeconds[a.id] || 0))[0]?.index ?? null;
 }
 function renderFormation() {
@@ -234,19 +262,20 @@ function renderFormation() {
   const recommendedPosition = selectedBenchId ? recommendedOutgoingPosition(selectedBenchId) : null;
   document.getElementById("formation").innerHTML = formation.positions.map((position, index) => {
     const id = lineup[index];
-    const quarterSeconds = id ? currentQuarterPlayingSeconds(id) : 0;
-    const heat = playingTimeColor(quarterSeconds);
-    const label = id ? `${position.label}, ${playerName(id)}, ${formatDuration(quarterSeconds)} played this quarter` : `${position.label}, open position`;
-    return `<button type="button" data-position="${index}" style="grid-column:${position.col} / span ${position.span};grid-row:${position.row};--player-color:${heat.color};--player-text:${heat.text}" class="field-player ${selectedPosition === index ? "selected" : ""} ${recommendedPosition === index ? "recommended-out" : ""} ${!id ? "open" : ""}" aria-label="${escapeHTML(label)}" aria-pressed="${selectedPosition === index}">${recommendedPosition === index ? `<b class="swap-hint">SUGGESTED</b>` : ""}<small class="field-position">${position.label}</small><strong class="field-name">${id ? escapeHTML(playerName(id)) : "OPEN"}</strong>${id ? `<span class="field-time">${formatDuration(quarterSeconds)}</span>` : ""}</button>`;
+    const gameSeconds = id ? gameState.playingSeconds[id] || 0 : 0;
+    const heat = playingTimeColor(gameSeconds);
+    const label = id ? `${position.label}, ${playerName(id)}, ${formatDuration(gameSeconds)} played this game, ${heat.stage}` : `${position.label}, open position`;
+    return `<button type="button" data-position="${index}" style="grid-column:${position.col} / span ${position.span};grid-row:${position.row};--player-color:${heat.color};--player-text:${heat.text}" class="field-player ${selectedPosition === index ? "selected" : ""} ${recommendedPosition === index ? "recommended-out" : ""} ${!id ? "open" : ""}" aria-label="${escapeHTML(label)}" aria-pressed="${selectedPosition === index}">${recommendedPosition === index ? `<b class="swap-hint">SUGGESTED</b>` : ""}<small class="field-position">${position.label}</small><strong class="field-name">${id ? escapeHTML(playerName(id)) : "OPEN"}</strong>${id ? `<span class="field-time">${formatDuration(gameSeconds)}</span>` : ""}</button>`;
   }).join("");
 }
 function renderLive() {
   const lineup = currentLineup(); const bench = currentBench();
   const recommendedBench = rankedBench(bench);
   const formation = activeFormation();
-  document.getElementById("liveGameLabel").textContent = `Game ${gameState.game + 1} · Quarter ${gameState.quarter + 1}`;
-  document.getElementById("liveFormationLabel").textContent = `${gameState.format === "indoor" ? "Indoor" : "Outdoor"} · ${gameState.teamSize}v${gameState.teamSize} · ${formation.name}`;
-  document.querySelectorAll("[data-quarter]").forEach((button) => button.classList.toggle("active", Number(button.dataset.quarter) === gameState.quarter));
+  renderPeriodPicker();
+  document.getElementById("liveGameLabel").textContent = `Game ${gameState.game + 1} · ${periodWord()}`;
+  document.getElementById("liveFormationLabel").textContent = `${gameState.format === "indoor" ? "Indoor" : "Outdoor"} · ${gameState.teamSize}v${gameState.teamSize} · ${formation.name} · ${gameState.periodCount} × ${gameState.periodMinutes} min`;
+  document.getElementById("clockLabel").textContent = `${gameState.periodCount === 2 ? "Half" : "Quarter"} clock`;
   renderFormation();
   document.getElementById("benchGrid").innerHTML = recommendedBench.map((id, index) => `<button type="button" data-bench-id="${id}" class="${selectedBenchId === id ? "selected" : ""}"><span class="bench-rank">${index === 0 ? "NEXT" : `#${index + 1}`}</span><strong>${escapeHTML(playerName(id))}</strong><small>${formatDuration(gameState.playingSeconds[id])} played</small></button>`).join("") || `<p class="empty-state">No available bench players.</p>`;
   document.getElementById("benchCount").textContent = `${bench.length} available`;
@@ -260,9 +289,10 @@ function renderLive() {
   renderPlayingTime();
   document.getElementById("subLog").innerHTML = gameState.log.length ? gameState.log.map((item) => `<li><span>${escapeHTML(item.time)}</span>${escapeHTML(item.text)}</li>`).join("") : `<li class="empty-state">No changes yet.</li>`;
   const next = document.getElementById("nextRotation");
-  next.disabled = gameState.quarter === 3;
-  next.querySelector("span").textContent = gameState.quarter === 3 ? "Final rotation" : "Load next rotation";
-  next.querySelector("strong").textContent = gameState.quarter === 3 ? "Game complete" : `Quarter ${gameState.quarter + 2} →`;
+  const isFinalPeriod = gameState.quarter === gameState.periodCount - 1;
+  next.disabled = isFinalPeriod;
+  next.querySelector("span").textContent = isFinalPeriod ? "Final period" : "Load next rotation";
+  next.querySelector("strong").textContent = isFinalPeriod ? "Game complete" : `${periodWord(gameState.quarter + 1)} →`;
   renderClock(); saveGame();
 }
 function renderGame() {
@@ -277,10 +307,10 @@ function settleClock(now = Date.now()) {
   if (!gameState.runningSince || !clockRunning) return 0;
   const elapsed = Math.min(gameState.seconds, Math.max(0, Math.floor((now - gameState.runningSince) / 1000)));
   if (elapsed <= 0) return 0;
-  gameState.quarterPlayingSeconds[gameState.quarter] ||= {};
+  gameState.periodPlayingSeconds[gameState.quarter] ||= {};
   [...new Set(currentLineup().filter(Boolean))].forEach((id) => {
     gameState.playingSeconds[id] = (gameState.playingSeconds[id] || 0) + elapsed;
-    gameState.quarterPlayingSeconds[gameState.quarter][id] = (gameState.quarterPlayingSeconds[gameState.quarter][id] || 0) + elapsed;
+    gameState.periodPlayingSeconds[gameState.quarter][id] = (gameState.periodPlayingSeconds[gameState.quarter][id] || 0) + elapsed;
   });
   gameState.seconds = Math.max(0, gameState.seconds - elapsed);
   gameState.runningSince += elapsed * 1000;
@@ -296,26 +326,37 @@ function startClock() {
 }
 function stopClock() { settleClock(); endClock(false); saveGame(); renderClock(); renderPlayingTime(); }
 function loadQuarter(index, logChange = true) {
-  stopClock(); gameState.quarter = index; gameState.seconds = 720; selectedPosition = null; selectedBenchId = null;
-  gameState.quarterPlayingSeconds[index] ||= {};
+  stopClock(); gameState.quarter = index; gameState.seconds = periodDurationSeconds(); selectedPosition = null; selectedBenchId = null;
+  gameState.periodPlayingSeconds[index] ||= {};
   gameState.current = { lineup: [...gameState.plan[index].lineup], bench: [...gameState.plan[index].bench] };
-  if (logChange) gameState.log.unshift({ type: "rotation", quarter: index, time: `Q${index + 1} · 12:00`, text: `Loaded Quarter ${index + 1} rotation` });
+  if (logChange) gameState.log.unshift({ type: "rotation", quarter: index, time: `${periodShort(index)} · ${formatDuration(periodDurationSeconds())}`, text: `Loaded ${periodWord(index)} rotation` });
   renderGame();
 }
 
-gameSelect.addEventListener("change", () => { stopClock(); gameState.game = Number(gameSelect.value); gameState.quarter = 0; gameState.editingSession = false; gameState.plan = null; gameState.current = null; gameState.log = []; gameState.playingSeconds = {}; gameState.quarterPlayingSeconds = {}; gameState.seconds = 720; renderGame(); });
+function resetTimingProgress() {
+  stopClock(); gameState.quarter = 0; gameState.editingSession = false; gameState.plan = null; gameState.current = null; gameState.log = []; gameState.playingSeconds = {}; gameState.periodPlayingSeconds = {}; gameState.seconds = periodDurationSeconds();
+}
+function setMatchTiming(periodCount, periodMinutes, preset = "custom") {
+  gameState.periodCount = periodCount; gameState.periodMinutes = periodMinutes; gameState.timingPreset = preset;
+  resetTimingProgress(); renderGame();
+}
+
+gameSelect.addEventListener("change", () => { stopClock(); gameState.game = Number(gameSelect.value); gameState.quarter = 0; gameState.editingSession = false; gameState.plan = null; gameState.current = null; gameState.log = []; gameState.playingSeconds = {}; gameState.periodPlayingSeconds = {}; gameState.seconds = periodDurationSeconds(); renderGame(); });
 document.getElementById("formatPicker").addEventListener("click", (event) => { const button = event.target.closest("[data-format]"); if (!button) return; gameState.format = button.dataset.format; gameState.teamSize = FORMAT_SIZES[gameState.format][0]; gameState.formation = FORMATIONS[gameState.teamSize][0].id; gameState.plan = null; gameState.current = null; renderAttendance(); });
 document.getElementById("teamSizePicker").addEventListener("click", (event) => { const button = event.target.closest("[data-team-size]"); if (!button) return; gameState.teamSize = Number(button.dataset.teamSize); gameState.formation = FORMATIONS[gameState.teamSize][0].id; gameState.plan = null; gameState.current = null; renderAttendance(); });
 document.getElementById("formationSelect").addEventListener("change", (event) => { gameState.formation = event.target.value; gameState.plan = null; gameState.current = null; renderAttendance(); });
+document.getElementById("timingPreset").addEventListener("change", (event) => { const preset = TIMING_PRESETS[event.target.value]; if (!preset) { gameState.timingPreset = "custom"; saveGame(); return; } setMatchTiming(preset.periodCount, preset.periodMinutes, event.target.value); showToast(`${preset.periodCount === 2 ? "Halves" : "Quarters"} set to ${preset.periodMinutes} minutes`); });
+document.getElementById("periodCountPicker").addEventListener("click", (event) => { const button = event.target.closest("[data-period-count]"); if (!button || Number(button.dataset.periodCount) === gameState.periodCount) return; setMatchTiming(Number(button.dataset.periodCount), gameState.periodMinutes); showToast("Custom match timing saved"); });
+document.getElementById("periodMinutes").addEventListener("change", (event) => { setMatchTiming(gameState.periodCount, Number(event.target.value)); showToast("Custom match timing saved"); });
 document.getElementById("attendanceGrid").addEventListener("click", (event) => { const button = event.target.closest("[data-player-id]"); if (!button) return; const id = button.dataset.playerId; gameState.present = gameState.present.includes(id) ? gameState.present.filter((item) => item !== id) : [...gameState.present, id]; renderAttendance(); });
 document.getElementById("selectAllPlayers").addEventListener("click", () => { gameState.present = gameState.present.length === allPlayers().length ? [] : allPlayers().map((player) => player.id); renderAttendance(); });
 document.getElementById("startGame").addEventListener("click", () => {
-  const resumeCurrentQuarter = Boolean(gameState.editingSession && gameState.current);
-  const previousLineup = resumeCurrentQuarter ? currentLineup() : [];
+  const resumeCurrentPeriod = Boolean(gameState.editingSession && gameState.current);
+  const previousLineup = resumeCurrentPeriod ? currentLineup() : [];
   gameState.plan = buildPlan(); gameState.present.forEach((id) => { gameState.playingSeconds[id] ||= 0; }); gameState.live = true;
-  const setup = `${gameState.format === "indoor" ? "Indoor" : "Outdoor"} ${gameState.teamSize}v${gameState.teamSize} · ${activeFormation().name}`;
-  gameState.log.unshift({ id: crypto.randomUUID?.() || String(Date.now()), type: gameState.log.length ? "attendance" : "start", at: Date.now(), quarter: gameState.quarter, remainingSeconds: gameState.seconds, time: `Q${gameState.quarter + 1} · ${clockText()}`, text: gameState.log.length ? `Attendance updated · ${gameState.present.length} players · ${setup}` : `Game started · ${setup} · ${gameState.present.length} players` });
-  if (resumeCurrentQuarter) {
+  const setup = `${gameState.format === "indoor" ? "Indoor" : "Outdoor"} ${gameState.teamSize}v${gameState.teamSize} · ${activeFormation().name} · ${gameState.periodCount} × ${gameState.periodMinutes} min`;
+  gameState.log.unshift({ id: crypto.randomUUID?.() || String(Date.now()), type: gameState.log.length ? "attendance" : "start", at: Date.now(), quarter: gameState.quarter, remainingSeconds: gameState.seconds, time: `${periodShort()} · ${clockText()}`, text: gameState.log.length ? `Attendance updated · ${gameState.present.length} players · ${setup}` : `Game started · ${setup} · ${gameState.present.length} players` });
+  if (resumeCurrentPeriod) {
     const lineup = Array.from({ length: gameState.teamSize }, (_, index) => gameState.present.includes(previousLineup[index]) ? previousLineup[index] : null);
     const bench = gameState.present.filter((id) => !lineup.includes(id));
     gameState.current = { lineup, bench }; gameState.editingSession = false; selectedPosition = null; selectedBenchId = null; renderGame();
@@ -323,7 +364,7 @@ document.getElementById("startGame").addEventListener("click", () => {
 });
 document.getElementById("editAttendance").addEventListener("click", () => { stopClock(); gameState.live = false; gameState.editingSession = true; renderGame(); });
 document.getElementById("quarterPicker").addEventListener("click", (event) => { const button = event.target.closest("button"); if (!button || Number(button.dataset.quarter) === gameState.quarter) return; loadQuarter(Number(button.dataset.quarter)); });
-document.getElementById("nextRotation").addEventListener("click", () => { if (gameState.quarter < 3) loadQuarter(gameState.quarter + 1); });
+document.getElementById("nextRotation").addEventListener("click", () => { if (gameState.quarter < gameState.periodCount - 1) loadQuarter(gameState.quarter + 1); });
 function makeSubstitution(positionIndex, incoming) {
   settleClock(); renderClock();
   const lineup = currentLineup(); const bench = currentBench(); const outgoing = lineup[positionIndex];
@@ -332,7 +373,7 @@ function makeSubstitution(positionIndex, incoming) {
   const clock = clockText();
   const position = activeFormation().positions[positionIndex].label;
   const outgoingTotalSeconds = outgoing ? gameState.playingSeconds[outgoing] || 0 : null;
-  gameState.log.unshift({ id: crypto.randomUUID?.() || `${Date.now()}-${incoming}`, type: "substitution", at: Date.now(), quarter: gameState.quarter, elapsedQuarterSeconds: 720 - gameState.seconds, remainingSeconds: gameState.seconds, clock, position, incoming, outgoing, outgoingTotalSeconds, time: `Q${gameState.quarter + 1} · ${clock}`, text: outgoing ? `${playerName(incoming)} in for ${playerName(outgoing)} at ${position} · ${playerName(outgoing)} total ${formatDuration(outgoingTotalSeconds)}` : `${playerName(incoming)} filled the open ${position} spot` });
+  gameState.log.unshift({ id: crypto.randomUUID?.() || `${Date.now()}-${incoming}`, type: "substitution", at: Date.now(), quarter: gameState.quarter, elapsedPeriodSeconds: periodDurationSeconds() - gameState.seconds, remainingSeconds: gameState.seconds, clock, position, incoming, outgoing, outgoingTotalSeconds, time: `${periodShort()} · ${clock}`, text: outgoing ? `${playerName(incoming)} in for ${playerName(outgoing)} at ${position} · ${playerName(outgoing)} total ${formatDuration(outgoingTotalSeconds)}` : `${playerName(incoming)} filled the open ${position} spot` });
   selectedPosition = null; selectedBenchId = null; renderLive();
 }
 document.getElementById("formation").addEventListener("click", (event) => {
@@ -348,7 +389,7 @@ document.getElementById("benchGrid").addEventListener("click", (event) => {
   selectedBenchId = selectedBenchId === incoming ? null : incoming; renderLive();
 });
 document.getElementById("clockButton").addEventListener("click", () => {
-  if (gameState.seconds === 0) { gameState.seconds = 720; renderClock(); saveGame(); return; }
+  if (gameState.seconds === 0) { gameState.seconds = periodDurationSeconds(); renderClock(); saveGame(); return; }
   if (clockRunning) stopClock(); else startClock();
 });
 document.getElementById("clearLog").addEventListener("click", () => { gameState.log = []; renderLive(); });

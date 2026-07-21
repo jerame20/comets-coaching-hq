@@ -209,7 +209,8 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 
 .game-picker { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
 .game-picker::-webkit-scrollbar { display: none; }
-.game-picker button, .quarter-picker button { min-width: 82px; min-height: 44px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--green); font: inherit; font-size: 13px; font-weight: 850; cursor: pointer; }
+.game-picker button, .quarter-picker button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--green); font: inherit; font-size: 13px; font-weight: 850; white-space: nowrap; cursor: pointer; }
+.game-picker button { padding-inline: 11px; font-size: 12px; }
 .game-picker button.active, .quarter-picker button.active { border-color: var(--green); background: var(--green); color: white; }
 .rotation-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
 .rotation-card { overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: var(--card); box-shadow: 0 5px 20px rgba(20,47,35,.05); }
@@ -257,6 +258,8 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 .match-setup-card { padding: 17px; border: 1px solid var(--line); border-radius: 18px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; background: var(--card); }
 .match-setup-card label, .match-setup-card fieldset { min-width: 0; margin: 0; padding: 0; border: 0; color: var(--muted); font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .match-setup-card select { width: 100%; height: 54px; margin-top: 7px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: white; color: var(--ink); font: inherit; font-size: 16px; font-weight: 900; }
+.timing-source { display: block; margin-top: 7px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: 0; line-height: 1.35; text-transform: none; }
+.timing-source a { color: var(--green-2); }
 .choice-pills { display: flex; gap: 7px; margin-top: 7px; }
 .choice-pills button { flex: 1; min-height: 54px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: white; color: var(--green); font: inherit; font-size: 14px; font-weight: 900; cursor: pointer; }
 .choice-pills button.active { border-color: var(--green); background: var(--green); color: white; }
@@ -277,7 +280,7 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 .starter-preview strong { margin-top: 4px; font-size: 13px; }
 .starter-preview .open { border-style: dashed; border-color: #df9a8e; background: #fff0ec; color: #a83827; }
 .setup-warning { min-height: 20px; margin: 10px 0; color: #a83827; font-size: 13px; font-weight: 800; }
-.start-game-button { width: 100%; min-height: 70px; border: 0; border-radius: 18px; background: var(--coral); color: #2d1712; font: inherit; font-size: 20px; font-weight: 950; cursor: pointer; box-shadow: 0 10px 24px rgba(255,118,95,.2); }
+.start-game-button { width: auto; min-width: min(100%, 250px); min-height: 64px; margin: 0 auto; padding: 0 24px; border: 0; border-radius: 18px; display: block; background: var(--coral); color: #2d1712; font: inherit; font-size: 18px; font-weight: 950; cursor: pointer; box-shadow: 0 10px 24px rgba(255,118,95,.2); }
 .start-game-button:disabled { opacity: .42; cursor: not-allowed; box-shadow: none; }
 .live-status { margin-bottom: 12px; padding: 13px 16px; border: 1px solid var(--line); border-radius: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--card); }
 .live-status small, .live-status strong, .live-status span { display: block; }
@@ -286,7 +289,7 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 .live-status span { margin-top: 3px; color: var(--muted); font-size: 11px; font-weight: 800; }
 .live-status button { min-height: 44px; border: 1px solid var(--line); border-radius: 999px; padding: 0 14px; background: white; color: var(--green); font: inherit; font-size: 12px; font-weight: 850; cursor: pointer; }
 .live-game > .quarter-picker { margin-bottom: 10px; }
-.live-game > .quarter-picker button { min-width: 0; width: 25%; border-radius: 12px; }
+.live-game > .quarter-picker button { flex: 1; min-width: 0; width: auto; border-radius: 12px; }
 .next-rotation-button { width: 100%; min-height: 68px; margin: 0 0 12px; padding: 10px 18px; border: 0; border-radius: 17px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--coral); color: #2d1712; font: inherit; cursor: pointer; }
 .next-rotation-button span { font-size: 13px; font-weight: 800; }
 .next-rotation-button strong { font-size: 19px; }
@@ -313,9 +316,12 @@ footer span:first-child { color: var(--green); font-weight: 850; }
 .time-color-key { margin: -3px 0 12px; display: flex; flex-wrap: wrap; gap: 10px 14px; color: var(--muted); font-size: 10px; font-weight: 800; }
 .time-color-key span { display: inline-flex; align-items: center; gap: 5px; }
 .time-color-key i { width: 9px; height: 9px; border-radius: 50%; }
-.time-color-key .fresh { background: hsl(120 78% 36%); }
-.time-color-key .mid { background: hsl(60 78% 43%); }
-.time-color-key .due { background: hsl(0 78% 47%); }
+.time-color-key .fresh { background: #18a44b; }
+.time-color-key .building { background: #d6c51c; }
+.time-color-key .watch { background: #f18f1c; }
+.time-color-key .due { background: #e23d3d; }
+.time-color-key .overdue { background: #8b4cc7; }
+.time-color-key .maxed { background: #f04f9a; }
 .formation { min-height: 430px; padding: 16px; border-radius: 18px; display: grid; grid-template-columns: repeat(12,1fr); grid-template-rows: repeat(4,1fr); gap: 8px 4px; background: #286d48; background-image: linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg,rgba(255,255,255,.12) 1px,transparent 1px); background-size: 100% 25%, 16.67% 100%; }
 .field-player { position: relative; width: clamp(66px, 9vw, 86px); max-width: 100%; aspect-ratio: 1; min-height: 0; padding: 7px 5px; border: 3px solid rgba(255,255,255,.82); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; justify-self: center; align-self: center; overflow: visible; background: var(--player-color, hsl(120 78% 36%)); color: var(--player-text, white); font: inherit; cursor: pointer; box-shadow: 0 8px 18px rgba(0,0,0,.2); transition: 180ms ease; }
 .field-player small, .field-player strong, .field-player span { display: block; max-width: 100%; }
@@ -420,6 +426,10 @@ html[data-theme="night"] .privacy-note { background: rgba(17,24,39,.9); border-c
 html[data-theme="night"] .quick-card small,
 html[data-theme="night"] .mini-bench p,
 html[data-theme="night"] .saved-notes article p { color: var(--muted); }
+html[data-theme="night"] .rotation-card,
+html[data-theme="night"] .rotation-card header,
+html[data-theme="night"] .rotation-card header strong,
+html[data-theme="night"] .rotation-card .mini-lineup b { color: #f3f7ff; }
 html[data-theme="night"] .card-icon { background: #1c2a40; }
 html[data-theme="night"] .player-card dl div,
 html[data-theme="night"] .mini-lineup div,
@@ -525,7 +535,7 @@ html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
   .attendance-grid-large { display: flex; flex-wrap: wrap; gap: 8px; }
   .attendance-grid-large button { flex: 0 0 auto; width: auto; min-width: 104px; min-height: 62px !important; padding-right: 16px !important; }
   .starter-preview { grid-template-columns: repeat(4,1fr); }
-  .start-game-button:not(:disabled) { position: sticky; bottom: 10px; z-index: 14; }
+  .start-game-button { position: static; }
   .game-controls { display: block; }
   .game-controls select { width: 100%; }
   .quarter-picker { margin-top: 9px; }
@@ -567,6 +577,8 @@ html[data-theme="night"] .toast { background: #eaf2ff; color: #080b12; }
   body.live-gameday .live-status button { min-height: 50px; padding: 0 16px; font-size: 13px; }
   body.live-gameday .quarter-picker { order: 2; margin: 0 0 8px; }
   body.live-gameday .quarter-picker button { min-height: 54px; font-size: 15px; }
+  body.live-gameday .time-color-key { flex-wrap: nowrap; gap: 11px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  body.live-gameday .time-color-key::-webkit-scrollbar { display: none; }
   body.live-gameday .game-clock { order: 3; top: 68px; min-height: 92px; margin: 0 0 10px; padding: 12px 14px; }
   body.live-gameday .game-clock strong { font-size: 50px; }
   body.live-gameday .clock-button { min-width: 122px; min-height: 66px; font-size: 19px; }

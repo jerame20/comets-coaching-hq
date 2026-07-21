@@ -10,7 +10,7 @@
     <title>Comets Coaching HQ</title>
     <meta name="description" content="The shared coaching hub for Comets practice, player development, rotations, and game-day planning." />
     <script>document.documentElement.dataset.theme = localStorage.getItem("comets-theme") || "night";</script>
-    <link rel="stylesheet" href="styles.css?v=16" />
+    <link rel="stylesheet" href="styles.css?v=17" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="icon.svg" type="image/svg+xml" />
   </head>
@@ -139,6 +139,16 @@
             <fieldset><legend>Format</legend><div class="choice-pills" id="formatPicker"><button type="button" data-format="indoor">Indoor</button><button type="button" data-format="outdoor">Outdoor</button></div></fieldset>
             <fieldset><legend>Players on field</legend><div class="choice-pills" id="teamSizePicker"></div></fieldset>
             <label>Formation<select id="formationSelect" aria-label="Choose formation"></select></label>
+            <label>Match timing<select id="timingPreset" aria-label="Choose a match timing preset">
+              <option value="psa-k1">PSA K–1st · 4 × 10 min</option>
+              <option value="psa-2">PSA 2nd grade · 4 × 12 min</option>
+              <option value="psa-34">PSA 3rd–4th · 2 × 25 min</option>
+              <option value="psa-56">PSA 5th–6th · 2 × 30 min</option>
+              <option value="psa-710">PSA 7th–10th · 2 × 35 min</option>
+              <option value="custom">Custom timing</option>
+            </select><small class="timing-source">From the <a href="https://cdn.sanity.io/files/gwh42vb9/production/86ef7e8e6a6efdd7f4b266b41227613029c8791c.pdf" target="_blank" rel="noopener">official PSA outdoor rules</a>.</small></label>
+            <fieldset><legend>Periods</legend><div class="choice-pills" id="periodCountPicker"><button type="button" data-period-count="2">2 halves</button><button type="button" data-period-count="4">4 quarters</button></div></fieldset>
+            <label>Minutes each<select id="periodMinutes" aria-label="Choose minutes per period"></select></label>
           </div>
           <div class="setup-step"><span>2</span><div><strong>Who showed up?</strong><small>Tap each kid who is here, or use Select all.</small></div></div>
           <div class="attendance-toolbar"><strong id="attendanceCount"></strong><div><button id="selectAllPlayers" type="button">Select all</button><button class="add-player-trigger" type="button">+ Add player</button></div></div>
@@ -154,16 +164,16 @@
             <div><small>Live now</small><strong id="liveGameLabel">Game 1 · Q1</strong><span id="liveFormationLabel"></span></div>
             <button id="editAttendance" type="button">Edit attendance</button>
           </div>
-          <div class="quarter-picker" id="quarterPicker" aria-label="Choose quarter"></div>
+          <div class="quarter-picker" id="quarterPicker" aria-label="Choose period"></div>
           <div class="game-clock">
-            <div><span>Quarter clock</span><strong id="clockDisplay">12:00</strong></div>
+            <div><span id="clockLabel">Quarter clock</span><strong id="clockDisplay">12:00</strong></div>
             <button class="clock-button" id="clockButton" type="button">Start</button>
           </div>
-          <button class="next-rotation-button" id="nextRotation" type="button"><span>Load next rotation</span><strong>Quarter 2 →</strong></button>
+          <button class="next-rotation-button" id="nextRotation" type="button"><span>Load next rotation</span><strong>Next period →</strong></button>
           <div class="swap-instruction" id="swapInstruction">Choose either direction: tap a field player or a ranked bench player first.</div>
           <section class="playing-time-panel"><div class="panel-title"><div><h2>Playing time</h2><small>Live game totals</small></div><span id="teamTimeStatus">Clock paused</span></div><div class="playing-time-grid" id="playingTimeGrid"></div></section>
           <div class="lineup-layout">
-            <section class="lineup-panel"><div class="panel-title"><h2>On the field</h2><span id="fieldCount">7 players</span></div><div class="time-color-key" aria-label="Playing time color key"><span><i class="fresh"></i>Fresh</span><span><i class="mid"></i>Mid-quarter</span><span><i class="due"></i>Rotation due</span></div><div class="formation" id="formation"></div></section>
+            <section class="lineup-panel"><div class="panel-title"><h2>On the field</h2><span id="fieldCount">7 players</span></div><div class="time-color-key" aria-label="Playing time color key"><span><i class="fresh"></i>Fresh</span><span><i class="building"></i>Building</span><span><i class="watch"></i>Watch</span><span><i class="due"></i>Sub due</span><span><i class="overdue"></i>Overdue</span><span><i class="maxed"></i>75% game</span></div><div class="formation" id="formation"></div></section>
             <section class="bench-panel"><div class="panel-title"><div><h2>Bench order</h2><small>Role fit + least playing time</small></div><span id="benchCount"></span></div><div class="bench-grid" id="benchGrid"></div></section>
           </div>
           <section class="sub-log"><div class="panel-title"><h2>Game log</h2><button id="clearLog" type="button">Clear</button></div><ol id="subLog"></ol></section>
@@ -196,6 +206,6 @@
     </dialog>
     <footer><span>Comets Coaching HQ</span><span>Built for coaches, not paperwork.</span></footer>
     <script src="data.js?v=10"></script>
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=18"></script>
   </body>
 </html>
