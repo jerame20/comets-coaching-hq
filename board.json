@@ -1,15 +1,6 @@
 {
-  "updatedAt": "7/21/2026 16:01:19",
+  "updatedAt": "7/21/2026 14:09:13",
   "posts": [
-    {
-      "id": "post-2a7eff3b-8ef9-479e-a0f7-e6636c1e37a6",
-      "author": "Bryan",
-      "title": "Top nav improvement",
-      "category": "App idea",
-      "body": "The top nav should be visible no matter what page the user is on. And the top nav should have enough margin at the top so that the iPhone status area doesn’t cover up the content. And fix the game day nav link - the green dot is making it wrap.",
-      "created": "7/21/2026 16:01:19",
-      "comments": []
-    },
     {
       "id": "post-ef101f9a-b083-41c2-864b-dd2c79caa2b6",
       "author": "Bryan",
