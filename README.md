@@ -15,7 +15,9 @@ The soccer-ball artwork is adapted from Twemoji's `26bd.svg` under CC-BY 4.0.
 ## Game-day app
 
 - Attendance-first check-in with large touch targets and a generated starting lineup
-- PSA 2nd-grade defaults: indoor 9v9 with two 20-minute halves and outdoor 7v7 with four 12-minute quarters, with two formations per format
+- PSA 2nd-grade defaults: indoor 9v9 with two 20-minute halves and outdoor 7v7 with four 12-minute quarters; outdoor includes 2-3-1, 3-2-1, 1-3-2, and 1-2-3 formations
+- Live formation switching that preserves the current on-field group, clock, playing-time totals, and game log
+- One-block Markdown export of every app-visible roster, role, coverage, rotation, game-state, and coach-board dataset
 - Add-player flow with device-local roster persistence
 - Player profile edits, additions, and removals sync through the private intake Sheet into a shared durable roster; local storage remains the instant/offline copy
 - Six games with attendance-aware plans for either halves or quarters
@@ -31,7 +33,7 @@ The soccer-ball artwork is adapted from Twemoji's `26bd.svg` under CC-BY 4.0.
 
 ## Coach board
 
-The Coach board remembers one of three device-local identities: Jeremy, Brian, or Dante. Coaches can create posts with links and add threaded replies. New items appear immediately as pending, submit through Jeremy's private Google Form, and are mirrored into the read-only board feed by Darwin's intake monitor.
+The Coach board remembers one of three device-local identities: Jeremy, Bryan, or Dante. Coaches can create posts with links and add threaded replies. New items appear immediately as pending, submit through Jeremy's private Google Form, and are mirrored into the read-only board feed by Darwin's intake monitor.
 
 The deterministic launchd monitor in `scripts/note_intake_monitor.py` checks the response Sheet once per minute, rebuilds `board.json`, and publishes changed board data. App-idea posts are also relayed to the private soccer-coaching Discord channel so Darwin can flag them for Jeremy. SHA-256 row fingerprints provide deduplication, and failures alert the channel at most once per hour.
 

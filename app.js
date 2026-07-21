@@ -99,7 +99,12 @@ const makeFormation = (id, name, lines) => ({ id, name, positions: lines.flatMap
 const FORMATIONS = {
   5: [makeFormation("5-121", "1-2-1", [["ST"],["LM","RM"],["CB"],["GK"]]), makeFormation("5-211", "2-1-1", [["ST"],["CM"],["LD","RD"],["GK"]])],
   6: [makeFormation("6-221", "2-2-1", [["ST"],["LM","RM"],["LD","RD"],["GK"]]), makeFormation("6-131", "1-3-1", [["ST"],["LM","CM","RM"],["CB"],["GK"]])],
-  7: [makeFormation("7-231", "2-3-1", [["ST"],["LM","CM","RM"],["LD","RD"],["GK"]]), makeFormation("7-321", "3-2-1", [["ST"],["LM","RM"],["LD","CB","RD"],["GK"]])],
+  7: [
+    makeFormation("7-231", "2-3-1", [["ST"],["LM","CM","RM"],["LD","RD"],["GK"]]),
+    makeFormation("7-321", "3-2-1", [["ST"],["LM","RM"],["LD","CB","RD"],["GK"]]),
+    makeFormation("7-132", "1-3-2", [["LF","RF"],["LM","CM","RM"],["CB"],["GK"]]),
+    makeFormation("7-123", "1-2-3", [["LF","ST","RF"],["LM","RM"],["CB"],["GK"]])
+  ],
   9: [makeFormation("9-332", "3-3-2", [["LF","RF"],["LM","CM","RM"],["LD","CB","RD"],["GK"]]), makeFormation("9-323", "3-2-3", [["LF","ST","RF"],["LM","RM"],["LD","CB","RD"],["GK"]])],
   11: [makeFormation("11-433", "4-3-3", [["LF","ST","RF"],["LM","CM","RM"],["LB","LCB","RCB","RB"],["GK"]]), makeFormation("11-442", "4-4-2", [["LF","RF"],["LM","LCM","RCM","RM"],["LB","LCB","RCB","RB"],["GK"]])]
 };
@@ -305,6 +310,7 @@ function renderLive() {
   renderPeriodPicker();
   document.getElementById("liveGameLabel").textContent = `Game ${gameState.game + 1} · ${periodWord()}`;
   document.getElementById("liveFormationLabel").textContent = `${gameState.format === "indoor" ? "Indoor" : "Outdoor"} · ${gameState.teamSize}v${gameState.teamSize} · ${formation.name} · ${gameState.periodCount} × ${gameState.periodMinutes} min`;
+  document.getElementById("liveFormationSelect").innerHTML = FORMATIONS[gameState.teamSize].map((item) => `<option value="${item.id}" ${item.id === gameState.formation ? "selected" : ""}>${item.name}</option>`).join("");
   document.getElementById("clockLabel").textContent = `${gameState.periodCount === 2 ? "Half" : "Quarter"} clock`;
   renderFormation();
   document.getElementById("benchGrid").innerHTML = recommendedBench.map((id, index) => `<button type="button" data-bench-id="${id}" class="${selectedBenchId === id ? "selected" : ""}"><span class="bench-rank">${index === 0 ? "NEXT" : `#${index + 1}`}</span><strong>${escapeHTML(playerName(id))}</strong><small>${formatDuration(gameState.playingSeconds[id])} played</small></button>`).join("") || `<p class="empty-state">No available bench players.</p>`;
@@ -417,6 +423,32 @@ document.getElementById("startGame").addEventListener("click", () => {
   requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" }));
 });
 document.getElementById("editAttendance").addEventListener("click", () => { stopClock(); gameState.live = false; gameState.editingSession = true; renderGame(); });
+function remapLineup(lineup, oldFormation, newFormation) {
+  const remaining = lineup.map((id, index) => ({ id, oldLabel: oldFormation.positions[index]?.label })).filter((item) => item.id);
+  const mapped = Array(newFormation.positions.length).fill(null);
+  newFormation.positions.forEach((position, index) => {
+    const exact = remaining.findIndex((item) => item.oldLabel === position.label);
+    if (exact >= 0) mapped[index] = remaining.splice(exact, 1)[0].id;
+  });
+  newFormation.positions.forEach((position, index) => {
+    if (mapped[index] || !remaining.length) return;
+    const roleFit = remaining.findIndex((item) => roleMatches(playerById(item.id), position.label));
+    mapped[index] = remaining.splice(roleFit >= 0 ? roleFit : 0, 1)[0].id;
+  });
+  return mapped;
+}
+document.getElementById("liveFormationSelect").addEventListener("change", (event) => {
+  const nextFormation = FORMATIONS[gameState.teamSize].find((item) => item.id === event.target.value);
+  const previousFormation = activeFormation();
+  if (!nextFormation || nextFormation.id === previousFormation.id) return;
+  settleClock();
+  if (gameState.current) gameState.current.lineup = remapLineup(currentLineup(), previousFormation, nextFormation);
+  if (Array.isArray(gameState.plan)) gameState.plan = gameState.plan.map((period) => ({ ...period, lineup: remapLineup(period.lineup || [], previousFormation, nextFormation) }));
+  gameState.formation = nextFormation.id;
+  selectedPosition = null; selectedBenchId = null;
+  gameState.log.unshift({ id: crypto.randomUUID?.() || String(Date.now()), type: "formation", at: Date.now(), quarter: gameState.quarter, remainingSeconds: gameState.seconds, time: `${periodShort()} · ${clockText()}`, text: `Formation changed from ${previousFormation.name} to ${nextFormation.name}` });
+  renderLive(); showToast(`Switched to ${nextFormation.name}`);
+});
 document.getElementById("quarterPicker").addEventListener("click", (event) => { const button = event.target.closest("button"); if (!button || Number(button.dataset.quarter) === gameState.quarter) return; loadQuarter(Number(button.dataset.quarter)); });
 document.getElementById("nextRotation").addEventListener("click", () => { if (gameState.quarter < gameState.periodCount - 1) loadQuarter(gameState.quarter + 1); });
 function makeSubstitution(positionIndex, incoming) {
@@ -546,16 +578,19 @@ const BOARD_SEEN_KEY = "comets-board-seen-v1";
 const BOARD_SOURCE = "https://raw.githubusercontent.com/jerame20/comets-coaching-hq/main/board.json";
 const NOTE_FORM_ENDPOINT = "https://docs.google.com/forms/d/e/1FAIpQLSdDXZhL0hgNDblnGi5sHtIT3m2wK_J2MSaViMvOoPjGjJURWw/formResponse";
 const NOTE_FORM_FIELDS = { coach: "entry.1308740030", subject: "entry.600358723", type: "entry.818830017", note: "entry.641937199" };
-const VALID_COACHES = ["Jeremy", "Brian", "Dante"];
+const VALID_COACHES = ["Jeremy", "Bryan", "Dante"];
 let boardData = { posts: [] };
 let pendingBoardItems;
 let seenBoardIds;
 try { pendingBoardItems = JSON.parse(localStorage.getItem(BOARD_PENDING_KEY) || "[]"); } catch { pendingBoardItems = []; }
 try { seenBoardIds = JSON.parse(localStorage.getItem(BOARD_SEEN_KEY) || "null"); } catch { seenBoardIds = null; }
 const coachIdentity = document.getElementById("coachIdentity");
-const savedCoach = localStorage.getItem(BOARD_IDENTITY_KEY) || "";
+const savedCoachRaw = localStorage.getItem(BOARD_IDENTITY_KEY) || "";
+const savedCoach = savedCoachRaw === "Brian" ? "Bryan" : savedCoachRaw;
 if (VALID_COACHES.includes(savedCoach)) coachIdentity.value = savedCoach;
+if (savedCoachRaw === "Brian") localStorage.setItem(BOARD_IDENTITY_KEY, "Bryan");
 function currentCoach() { return VALID_COACHES.includes(coachIdentity.value) ? coachIdentity.value : ""; }
+function displayCoachName(name) { return name === "Brian" ? "Bryan" : name; }
 function renderIdentity() { document.getElementById("coachIdentityLabel").textContent = currentCoach() || "Choose your name"; }
 coachIdentity.addEventListener("change", () => { if (currentCoach()) localStorage.setItem(BOARD_IDENTITY_KEY, currentCoach()); else localStorage.removeItem(BOARD_IDENTITY_KEY); renderIdentity(); });
 renderIdentity();
@@ -600,9 +635,9 @@ function renderBoard() {
   const posts = mergedBoard().posts;
   document.getElementById("boardFeed").innerHTML = posts.length ? posts.map((post) => `
     <article class="board-post ${post.pending ? "pending" : ""}">
-      <header><div class="coach-avatar">${escapeHTML(post.author.slice(0,1))}</div><div><strong>${escapeHTML(post.title)}</strong><small>${escapeHTML(post.author)} · ${displayBoardTime(post.createdAt || post.created)}${post.pending ? " · Syncing…" : ""}</small></div><span class="board-category">${escapeHTML(post.category)}</span></header>
+      <header><div class="coach-avatar">${escapeHTML(displayCoachName(post.author).slice(0,1))}</div><div><strong>${escapeHTML(post.title)}</strong><small>${escapeHTML(displayCoachName(post.author))} · ${displayBoardTime(post.createdAt || post.created)}${post.pending ? " · Syncing…" : ""}</small></div><span class="board-category">${escapeHTML(post.category)}</span></header>
       <div class="board-message">${linkifyBoardText(post.body)}</div>
-      <section class="board-comments">${(post.comments || []).map((comment) => `<div class="board-comment ${comment.pending ? "pending" : ""}"><b>${escapeHTML(comment.author)}</b><p>${linkifyBoardText(comment.body)}</p><small>${displayBoardTime(comment.createdAt || comment.created)}${comment.pending ? " · Syncing…" : ""}</small></div>`).join("")}</section>
+      <section class="board-comments">${(post.comments || []).map((comment) => `<div class="board-comment ${comment.pending ? "pending" : ""}"><b>${escapeHTML(displayCoachName(comment.author))}</b><p>${linkifyBoardText(comment.body)}</p><small>${displayBoardTime(comment.createdAt || comment.created)}${comment.pending ? " · Syncing…" : ""}</small></div>`).join("")}</section>
       <form class="comment-form" data-parent-id="${escapeHTML(post.id)}"><textarea rows="2" maxlength="1500" required placeholder="Reply as ${escapeHTML(currentCoach() || "a coach")}…"></textarea><button type="submit">Reply</button></form>
     </article>`).join("") : `<div class="board-empty"><strong>No posts yet.</strong><span>Start with a practice idea, useful video, or question for the other coaches.</span></div>`;
   window.installDictationFields?.(document.getElementById("boardFeed"));
@@ -626,7 +661,7 @@ async function queueBoardItem(item, button) {
 document.getElementById("boardForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   if (document.getElementById("boardWebsite").value) return;
-  const author = currentCoach(); if (!author) { coachIdentity.focus(); showToast("Choose Jeremy, Brian, or Dante first"); return; }
+  const author = currentCoach(); if (!author) { coachIdentity.focus(); showToast("Choose Jeremy, Bryan, or Dante first"); return; }
   const title = document.getElementById("boardTitle"); const category = document.getElementById("boardCategory"); const body = document.getElementById("boardBody");
   const item = { kind: "post", id: newBoardId("post"), author, title: title.value.trim(), category: category.value, body: body.value.trim(), createdAt: new Date().toISOString() };
   if (!item.title || !item.body) return;
@@ -650,6 +685,68 @@ async function loadBoard(showLoading = false) {
 }
 document.getElementById("refreshBoard").addEventListener("click", () => loadBoard(true));
 renderBoard(); loadBoard(); setInterval(() => { if (!document.hidden) loadBoard(); }, 60000);
+
+function markdownCell(value) { return String(value ?? "").replace(/\|/g, "\\|").replace(/\r?\n/g, "<br>"); }
+function appDataMarkdown() {
+  const formation = activeFormation();
+  const lineup = currentLineup();
+  const boardPosts = [...mergedBoard().posts].reverse();
+  const lines = [
+    "# Comets Coaching HQ export", "", `Exported: ${new Date().toLocaleString()}`, "",
+    "## Roster", "", "| Player | Preferred positions | Preferred foot | Development focus |", "|---|---|---|---|",
+    ...allPlayers().map((player) => `| ${markdownCell(player.name)} | ${markdownCell(player.anchors || "Flexible")} | ${markdownCell(player.foot || "Not noted")} | ${markdownCell(player.emphasis || "")} |`),
+    "", "## Role guide", "", "| Position | Job | Coaching cue | Avoid |", "|---|---|---|---|",
+    ...DATA.roles.map(([position, job, cue, mistake]) => `| ${markdownCell(position)} | ${markdownCell(job)} | ${markdownCell(cue)} | ${markdownCell(mistake)} |`),
+    "", "## Season coverage", "", `| Player | ${DATA.positions.join(" | ")} | Playing periods |`, `|---|${DATA.positions.map(() => "---").join("|")}|---|`,
+    ...DATA.coverage.map((row) => { const [sourceName, ...values] = row; const periods = values.pop(); return `| ${markdownCell(playerName(idForName(sourceName)))} | ${values.join(" | ")} | ${periods} |`; }),
+    "", "## Available formations", "",
+    ...Object.entries(FORMATIONS).map(([size, formations]) => `- ${size}v${size}: ${formations.map((item) => item.name).join(", ")}`),
+    "", "## Planned rotations", ""
+  ];
+  DATA.games.forEach((game, gameIndex) => {
+    lines.push(`### Game ${gameIndex + 1}`, "");
+    game.forEach((period, periodIndex) => {
+      const assignments = DATA.positions.map((position, index) => `${position}: ${playerName(idForName(period[index]))}`).join("; ");
+      const bench = period.slice(DATA.positions.length).map((name) => playerName(idForName(name))).join(", ");
+      lines.push(`- Quarter ${periodIndex + 1}: ${assignments}. Bench: ${bench}.`);
+    });
+    lines.push("");
+  });
+  lines.push(
+    "## Current game state", "",
+    `- Status: ${gameState.live ? "Live" : "Setup"}`,
+    `- Game: ${gameState.game + 1}`,
+    `- Format: ${gameState.format} ${gameState.teamSize}v${gameState.teamSize}`,
+    `- Formation: ${formation.name}`,
+    `- Period: ${periodWord()}`,
+    `- Clock: ${clockText()}`,
+    `- Present: ${gameState.present.map(playerName).join(", ") || "None selected"}`,
+    `- On field: ${formation.positions.map((position, index) => `${position.label}: ${lineup[index] ? playerName(lineup[index]) : "Open"}`).join("; ")}`,
+    `- Bench: ${currentBench().map(playerName).join(", ") || "None"}`,
+    "", "### Playing time", "",
+    ...(gameState.present.length ? gameState.present.map((id) => `- ${playerName(id)}: ${formatDuration(gameState.playingSeconds[id] || 0)}`) : ["- No players selected."]),
+    "", "### Game log", "",
+    ...(gameState.log.length ? gameState.log.map((item) => `- ${item.time}: ${item.text}`) : ["- No changes logged."]),
+    "", "## Coach board", ""
+  );
+  if (!boardPosts.length) lines.push("No board posts.");
+  boardPosts.forEach((post) => {
+    lines.push(`### ${post.title}`, "", `- Author: ${displayCoachName(post.author)}`, `- Category: ${post.category}`, `- Posted: ${post.created || post.createdAt || ""}`, "", post.body || "", "");
+    (post.comments || []).forEach((comment) => lines.push(`> **${displayCoachName(comment.author)}:** ${String(comment.body || "").replace(/\r?\n/g, " ")}`, ""));
+  });
+  return lines.join("\n").trim();
+}
+const exportDialog = document.getElementById("exportDialog");
+document.getElementById("exportButton").addEventListener("click", () => {
+  document.getElementById("exportMarkdown").value = appDataMarkdown();
+  exportDialog.showModal();
+});
+document.getElementById("closeExportDialog").addEventListener("click", () => exportDialog.close());
+document.getElementById("copyExportButton").addEventListener("click", async () => {
+  const field = document.getElementById("exportMarkdown");
+  try { await navigator.clipboard.writeText(field.value); showToast("All app data copied as Markdown"); }
+  catch { field.focus(); field.select(); document.execCommand("copy"); showToast("Markdown copied"); }
+});
 
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let activeRecognition = null;

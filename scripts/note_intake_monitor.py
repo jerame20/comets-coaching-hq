@@ -76,6 +76,11 @@ def clean(value, limit=1200):
     return text[:limit]
 
 
+def coach_name(value):
+    name = clean(value, 80)
+    return "Bryan" if name == "Brian" else name
+
+
 def format_note(row):
     padded = list(row) + [""] * (5 - len(row))
     timestamp, coach, subject, note_type, note = padded[:5]
@@ -99,7 +104,7 @@ def parse_board_row(row):
         return {
             "kind": "post",
             "id": clean(parts[1], 180),
-            "author": clean(coach, 80),
+            "author": coach_name(coach),
             "title": clean(unquote(parts[2]), 120),
             "category": clean(unquote(parts[3]), 80),
             "body": clean(note, 3000),
@@ -113,7 +118,7 @@ def parse_board_row(row):
             "kind": "comment",
             "parentId": clean(parts[1], 180),
             "id": clean(parts[2], 180),
-            "author": clean(coach, 80),
+            "author": coach_name(coach),
             "body": clean(note, 1500),
             "created": clean(timestamp, 120),
         }
