@@ -8,11 +8,13 @@ import os
 import subprocess
 import sys
 import time
+from urllib.parse import unquote
 from pathlib import Path
 
 
 PROJECT_DIR = Path("/Users/darwin/.openclaw/workspace/projects/tycho-soccer")
 STATE_PATH = PROJECT_DIR / "note-intake-state.json"
+BOARD_PATH = PROJECT_DIR / "board.json"
 GOG_SAFE = "/Users/darwin/.openclaw/workspace/scripts/gog-safe"
 OPENCLAW = "/opt/homebrew/bin/openclaw"
 SHEET_ID = "1J8E8bbGuMhN6IkBrNk8JGgJoatv0W9YWZg-_zSYe6RA"
@@ -86,6 +88,86 @@ def format_note(row):
     )
 
 
+def parse_board_row(row):
+    padded = list(row) + [""] * (5 - len(row))
+    timestamp, coach, subject, note_type, note = padded[:5]
+    if str(subject).startswith("BOARD_POST|"):
+        parts = str(subject).split("|", 3)
+        if len(parts) != 4:
+            return None
+        return {
+            "kind": "post",
+            "id": clean(parts[1], 180),
+            "author": clean(coach, 80),
+            "title": clean(unquote(parts[2]), 120),
+            "category": clean(unquote(parts[3]), 80),
+            "body": clean(note, 3000),
+            "created": clean(timestamp, 120),
+        }
+    if str(subject).startswith("BOARD_COMMENT|"):
+        parts = str(subject).split("|", 3)
+        if len(parts) != 3:
+            return None
+        return {
+            "kind": "comment",
+            "parentId": clean(parts[1], 180),
+            "id": clean(parts[2], 180),
+            "author": clean(coach, 80),
+            "body": clean(note, 1500),
+            "created": clean(timestamp, 120),
+        }
+    return None
+
+
+def build_board(rows):
+    posts = []
+    posts_by_id = {}
+    comments = []
+    latest = ""
+    for row in rows:
+        item = parse_board_row(row)
+        if not item:
+            continue
+        latest = item.get("created", latest)
+        if item["kind"] == "post":
+            post = {key: value for key, value in item.items() if key != "kind"}
+            post["comments"] = []
+            posts.append(post)
+            posts_by_id[post["id"]] = post
+        else:
+            comments.append(item)
+    for item in comments:
+        parent = posts_by_id.get(item["parentId"])
+        if parent:
+            parent["comments"].append({key: value for key, value in item.items() if key not in ("kind", "parentId")})
+    posts.reverse()
+    return {"updatedAt": latest, "posts": posts}
+
+
+def publish_board(rows):
+    payload = json.dumps(build_board(rows), ensure_ascii=False, indent=2) + "\n"
+    if BOARD_PATH.exists() and BOARD_PATH.read_text() == payload:
+        return
+    temporary = BOARD_PATH.with_suffix(".tmp")
+    temporary.write_text(payload)
+    temporary.replace(BOARD_PATH)
+    run_command(["git", "-C", str(PROJECT_DIR), "add", "board.json"])
+    staged = subprocess.run(["git", "-C", str(PROJECT_DIR), "diff", "--cached", "--quiet", "--", "board.json"])
+    if staged.returncode == 0:
+        return
+    run_command(["git", "-C", str(PROJECT_DIR), "commit", "-m", "Update coach bulletin board"])
+    run_command(["git", "-C", str(PROJECT_DIR), "push", "origin", "main"])
+
+
+def format_app_idea(item):
+    return (
+        "💡 **New Comets app idea from the coach board**\n"
+        f"**From:** {clean(item['author'], 80)}\n"
+        f"**Idea:** {clean(item['title'], 120)}\n\n"
+        f"{clean(item['body'], 1200)}"
+    )
+
+
 def alert_failure(state, error):
     now = int(time.time())
     if now - int(state.get("last_error_alert_at", 0)) < ERROR_ALERT_COOLDOWN_SECONDS:
@@ -105,6 +187,7 @@ def main():
     state = load_state()
     try:
         rows = fetch_rows()
+        publish_board(rows)
         seen = set(state.get("seen", []))
         if arguments.bootstrap:
             seen.update(row_digest(row) for row in rows)
@@ -113,7 +196,11 @@ def main():
                 digest = row_digest(row)
                 if digest in seen:
                     continue
-                send_discord(format_note(row))
+                board_item = parse_board_row(row)
+                if board_item and board_item["kind"] == "post" and board_item.get("category") == "App idea":
+                    send_discord(format_app_idea(board_item))
+                elif not board_item:
+                    send_discord(format_note(row))
                 seen.add(digest)
         state["seen"] = list(seen)[-MAX_SEEN:]
         state["last_success_at"] = int(time.time())

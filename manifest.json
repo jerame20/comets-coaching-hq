@@ -1,7 +1,7 @@
 {
   "name": "Comets Coaching HQ",
   "short_name": "Comets HQ",
-  "description": "Comets rotations, player coverage, coach notes, and live substitution tracking.",
+  "description": "Comets rotations, coach bulletin board, player coverage, and live substitution tracking.",
   "start_url": "./#gameday",
   "scope": "./",
   "display": "standalone",

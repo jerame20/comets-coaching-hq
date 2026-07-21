@@ -1,6 +1,6 @@
 # Comets Coaching HQ
 
-A dependency-free, mobile-first coaching app for the Comets roster, rotations, player coverage, coach feedback, and live substitutions.
+A dependency-free, mobile-first coaching app for the Comets roster, rotations, player coverage, coach collaboration, and live substitutions.
 
 ## Privacy model
 
@@ -26,13 +26,13 @@ A dependency-free, mobile-first coaching app for the Comets roster, rotations, p
 - Configurable clock, screen wake lock when available, vibration at zero, and substitution log
 - Local persistence and service-worker caching for refresh/offline resilience
 
-## Coach notes
+## Coach board
 
-Coach notes save locally on the device and submit to a private Google Form owned by Jeremy. Responses land in a linked private Sheet for Darwin's intake monitor; native sharing remains available as a fallback. Failed sends stay visibly marked on the device and can be retried.
+The Coach board remembers one of three device-local identities: Jeremy, Brian, or Dante. Coaches can create posts with links and add threaded replies. New items appear immediately as pending, submit through Jeremy's private Google Form, and are mirrored into the read-only board feed by Darwin's intake monitor.
 
-The deterministic launchd monitor in `scripts/note_intake_monitor.py` checks the response Sheet once per minute and relays unseen rows to the private soccer-coaching Discord channel. Minute-level freshness is intentional because notes may be submitted during games; a slower interval would leave coaches thinking the submission disappeared. SHA-256 row fingerprints provide deduplication, and failures alert the channel at most once per hour.
+The deterministic launchd monitor in `scripts/note_intake_monitor.py` checks the response Sheet once per minute, rebuilds `board.json`, and publishes changed board data. App-idea posts are also relayed to the private soccer-coaching Discord channel so Darwin can flag them for Jeremy. SHA-256 row fingerprints provide deduplication, and failures alert the channel at most once per hour.
 
-Every text-entry field includes inline browser voice dictation. Tap the mic to start, speak, and tap again to stop. Dictation uses the browser's explicit microphone permission and inserts the transcript directly into the active field; no audio is stored by the app.
+The board intentionally does not add browser voice controls. Its coach name is a fixed dropdown and is remembered on that device.
 
 ## Local preview
 
@@ -44,11 +44,10 @@ Then open `http://127.0.0.1:4178`.
 
 ## Sensible next phases
 
-1. Coach voice notes: record audio with explicit permission and attach the current hub tab, coach identity, and optional player selected by the coach. Transcribe into a private review queue for Jeremy; never silently capture the screen.
-2. Shared feedback backend: typed and voice notes grouped by player, practice, or game, with Jeremy approving every change before it reaches the planner.
-3. Absence auto-fill: recommend the available player with the lowest season coverage count for the open position while preserving both-half participation.
-4. Practice builder: choose a theme, available time, and player count; generate a printable plan and equipment list from the coaching curriculum.
-5. Schedule sync: read the official PSA schedule into a shared calendar while preserving the existing dedupe and child-name rules.
+1. Push notifications: add an opt-in Web Push backend so installed iPhone PWAs can receive background alerts and update the icon badge while closed.
+2. Absence auto-fill: recommend the available player with the lowest season coverage count for the open position while preserving both-half participation.
+3. Practice builder: choose a theme, available time, and player count; generate a printable plan and equipment list from the coaching curriculum.
+4. Schedule sync: read the official PSA schedule into a shared calendar while preserving the existing dedupe and child-name rules.
 
 ## GroupMe
 

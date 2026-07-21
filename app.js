@@ -17,7 +17,8 @@ const playerName = (id) => playerById(id)?.name || "Unknown";
 const views = [...document.querySelectorAll("[data-view]")];
 const tabs = [...document.querySelectorAll("[data-tab]")];
 function showView() {
-  const requested = location.hash.slice(1);
+  const requestedHash = location.hash.slice(1);
+  const requested = requestedHash === "feedback" ? "board" : requestedHash;
   const current = views.some((view) => view.dataset.view === requested) ? requested : "gameday";
   views.forEach((view) => view.classList.toggle("active", view.dataset.view === current));
   tabs.forEach((tab) => {
@@ -29,6 +30,7 @@ function showView() {
   document.title = current === "home" ? "Comets Coaching HQ" : `${activeView.dataset.title} · Comets Coaching HQ`;
   document.body.classList.toggle("gameday-view", current === "gameday");
   document.body.classList.toggle("live-gameday", current === "gameday" && !document.getElementById("liveGame")?.hidden);
+  if (current === "board") window.onBoardViewed?.();
   requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "instant" })));
 }
 window.addEventListener("hashchange", showView);
@@ -500,40 +502,115 @@ if (gameState.runningSince && gameState.live && gameState.current) {
 document.addEventListener("visibilitychange", () => { if (!gameState.runningSince) return; settleClock(); if (gameState.live) { renderClock(); renderPlayingTime(); } });
 window.addEventListener("pagehide", () => { settleClock(); saveGame(); });
 
-const NOTES_KEY = "comets-coach-notes-v1";
+const BOARD_IDENTITY_KEY = "comets-coach-identity-v1";
+const BOARD_PENDING_KEY = "comets-board-pending-v1";
+const BOARD_SEEN_KEY = "comets-board-seen-v1";
+const BOARD_SOURCE = "https://raw.githubusercontent.com/jerame20/comets-coaching-hq/main/board.json";
 const NOTE_FORM_ENDPOINT = "https://docs.google.com/forms/d/e/1FAIpQLSdDXZhL0hgNDblnGi5sHtIT3m2wK_J2MSaViMvOoPjGjJURWw/formResponse";
 const NOTE_FORM_FIELDS = { coach: "entry.1308740030", subject: "entry.600358723", type: "entry.818830017", note: "entry.641937199" };
-let notes;
-try { notes = JSON.parse(localStorage.getItem(NOTES_KEY) || "[]"); } catch { notes = []; }
-function draftText() {
-  const coach = document.getElementById("coachName").value.trim(); const type = document.getElementById("noteType").value; const subject = document.getElementById("noteSubject").value.trim(); const note = document.getElementById("noteText").value.trim();
-  if (!coach || !note) return "";
-  return `COMETS COACH NOTE\nFrom: ${coach}\nType: ${type}${subject ? `\nPlayer/topic: ${subject}` : ""}\n\n${note}`;
+const VALID_COACHES = ["Jeremy", "Brian", "Dante"];
+let boardData = { posts: [] };
+let pendingBoardItems;
+let seenBoardIds;
+try { pendingBoardItems = JSON.parse(localStorage.getItem(BOARD_PENDING_KEY) || "[]"); } catch { pendingBoardItems = []; }
+try { seenBoardIds = JSON.parse(localStorage.getItem(BOARD_SEEN_KEY) || "null"); } catch { seenBoardIds = null; }
+const coachIdentity = document.getElementById("coachIdentity");
+const savedCoach = localStorage.getItem(BOARD_IDENTITY_KEY) || "";
+if (VALID_COACHES.includes(savedCoach)) coachIdentity.value = savedCoach;
+function currentCoach() { return VALID_COACHES.includes(coachIdentity.value) ? coachIdentity.value : ""; }
+function renderIdentity() { document.getElementById("coachIdentityLabel").textContent = currentCoach() || "Choose your name"; }
+coachIdentity.addEventListener("change", () => { if (currentCoach()) localStorage.setItem(BOARD_IDENTITY_KEY, currentCoach()); else localStorage.removeItem(BOARD_IDENTITY_KEY); renderIdentity(); });
+renderIdentity();
+
+function newBoardId(prefix) { return `${prefix}-${crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`; }
+function displayBoardTime(value) {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? escapeHTML(value || "Just now") : parsed.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
-function renderNotes() {
-  const sentCount = notes.filter((note) => note.delivered).length;
-  document.getElementById("savedCount").textContent = `${notes.length} saved · ${sentCount} sent`;
-  document.getElementById("savedNotes").innerHTML = notes.length ? notes.map((note, index) => `<article><div><small>${escapeHTML(note.created)}</small><strong>${escapeHTML(note.type)}${note.subject ? ` · ${escapeHTML(note.subject)}` : ""}</strong><small class="delivery-status ${note.delivered ? "sent" : ""}">${note.delivered ? "Sent to Darwin" : "Saved locally — not sent"}</small><p>${escapeHTML(note.note)}</p></div><div>${note.delivered ? "" : `<button type="button" data-send-note="${index}">Retry</button>`}<button type="button" data-share-note="${index}">Share</button><button type="button" data-delete-note="${index}">Delete</button></div></article>`).join("") : `<p class="empty-state">No saved notes yet.</p>`;
-  localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+function linkifyBoardText(value) {
+  return escapeHTML(value).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g, "<br>");
 }
-async function sendCoachNote(note) {
-  const body = new URLSearchParams({ [NOTE_FORM_FIELDS.coach]: note.coach, [NOTE_FORM_FIELDS.subject]: note.subject, [NOTE_FORM_FIELDS.type]: note.type, [NOTE_FORM_FIELDS.note]: note.note, submit: "Submit" });
+function allBoardIds(data = boardData) { return data.posts.flatMap((post) => [post.id, ...(post.comments || []).map((comment) => comment.id)]); }
+function setBoardBadge(count) {
+  const badge = document.getElementById("boardBadge");
+  badge.hidden = count < 1; badge.textContent = count > 9 ? "9+" : String(count);
+  if (count > 0) navigator.setAppBadge?.(count).catch(() => {}); else navigator.clearAppBadge?.().catch(() => {});
+}
+function markBoardSeen() {
+  if (!boardData.posts.length) return;
+  seenBoardIds = allBoardIds(); localStorage.setItem(BOARD_SEEN_KEY, JSON.stringify(seenBoardIds)); setBoardBadge(0);
+}
+window.onBoardViewed = markBoardSeen;
+function updateBoardBadge() {
+  const ids = allBoardIds();
+  if (seenBoardIds === null) { seenBoardIds = ids; localStorage.setItem(BOARD_SEEN_KEY, JSON.stringify(ids)); }
+  if (location.hash === "#board" || location.hash === "#feedback") { markBoardSeen(); return; }
+  const seen = new Set(seenBoardIds); setBoardBadge(ids.filter((id) => !seen.has(id)).length);
+}
+function mergedBoard() {
+  const merged = JSON.parse(JSON.stringify(boardData));
+  pendingBoardItems.forEach((item) => {
+    if (item.kind === "post" && !merged.posts.some((post) => post.id === item.id)) merged.posts.unshift({ ...item, comments: [], pending: true });
+    if (item.kind === "comment") {
+      const parent = merged.posts.find((post) => post.id === item.parentId);
+      if (parent && !(parent.comments || []).some((comment) => comment.id === item.id)) { parent.comments ||= []; parent.comments.push({ ...item, pending: true }); }
+    }
+  });
+  return merged;
+}
+function renderBoard() {
+  const posts = mergedBoard().posts;
+  document.getElementById("boardFeed").innerHTML = posts.length ? posts.map((post) => `
+    <article class="board-post ${post.pending ? "pending" : ""}">
+      <header><div class="coach-avatar">${escapeHTML(post.author.slice(0,1))}</div><div><strong>${escapeHTML(post.title)}</strong><small>${escapeHTML(post.author)} · ${displayBoardTime(post.createdAt || post.created)}${post.pending ? " · Syncing…" : ""}</small></div><span class="board-category">${escapeHTML(post.category)}</span></header>
+      <div class="board-message">${linkifyBoardText(post.body)}</div>
+      <section class="board-comments">${(post.comments || []).map((comment) => `<div class="board-comment ${comment.pending ? "pending" : ""}"><b>${escapeHTML(comment.author)}</b><p>${linkifyBoardText(comment.body)}</p><small>${displayBoardTime(comment.createdAt || comment.created)}${comment.pending ? " · Syncing…" : ""}</small></div>`).join("")}</section>
+      <form class="comment-form" data-parent-id="${escapeHTML(post.id)}"><textarea rows="2" maxlength="1500" required placeholder="Reply as ${escapeHTML(currentCoach() || "a coach")}…" data-no-dictation></textarea><button type="submit">Reply</button></form>
+    </article>`).join("") : `<div class="board-empty"><strong>No posts yet.</strong><span>Start with a practice idea, useful video, or question for the other coaches.</span></div>`;
+}
+async function sendBoardItem(item) {
+  const encodedTitle = encodeURIComponent(item.title || "");
+  const encodedCategory = encodeURIComponent(item.category || "Other");
+  const subject = item.kind === "post" ? `BOARD_POST|${item.id}|${encodedTitle}|${encodedCategory}` : `BOARD_COMMENT|${item.parentId}|${item.id}`;
+  const acceptedType = ["Practice idea", "Game note", "Scheduling", "Other"].includes(item.category) ? item.category : "Other";
+  const body = new URLSearchParams({ [NOTE_FORM_FIELDS.coach]: item.author, [NOTE_FORM_FIELDS.subject]: subject, [NOTE_FORM_FIELDS.type]: acceptedType, [NOTE_FORM_FIELDS.note]: item.body, submit: "Submit" });
   await fetch(NOTE_FORM_ENDPOINT, { method: "POST", mode: "no-cors", body });
 }
-document.getElementById("feedbackForm").addEventListener("submit", async (event) => {
+function savePendingBoardItems() { localStorage.setItem(BOARD_PENDING_KEY, JSON.stringify(pendingBoardItems)); }
+async function queueBoardItem(item, button) {
+  pendingBoardItems.push(item); savePendingBoardItems(); renderBoard();
+  button.disabled = true; const original = button.textContent; button.textContent = "Posting…";
+  try { await sendBoardItem(item); showToast("Posted — it will finish syncing shortly"); }
+  catch { showToast("Could not post. Your draft is saved on this device."); }
+  finally { button.disabled = false; button.textContent = original; }
+}
+document.getElementById("boardForm").addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (document.getElementById("noteWebsite").value) return;
-  const text = draftText(); if (!text) return;
-  const coach = document.getElementById("coachName"); const type = document.getElementById("noteType"); const subject = document.getElementById("noteSubject"); const note = document.getElementById("noteText"); const button = document.getElementById("sendNoteButton");
-  const savedNote = { id: crypto.randomUUID?.() || String(Date.now()), coach: coach.value.trim(), type: type.value, subject: subject.value.trim(), note: note.value.trim(), created: new Date().toLocaleString(), createdAt: new Date().toISOString(), delivered: false };
-  notes.unshift(savedNote); subject.value = ""; note.value = ""; renderNotes(); button.disabled = true; button.textContent = "Sending…";
-  try { await sendCoachNote(savedNote); savedNote.delivered = true; renderNotes(); showToast("Sent to Darwin and saved here"); }
-  catch { renderNotes(); showToast("Saved here, but sending failed — tap Retry"); }
-  finally { button.disabled = false; button.textContent = "Send note to Darwin"; }
+  if (document.getElementById("boardWebsite").value) return;
+  const author = currentCoach(); if (!author) { coachIdentity.focus(); showToast("Choose Jeremy, Brian, or Dante first"); return; }
+  const title = document.getElementById("boardTitle"); const category = document.getElementById("boardCategory"); const body = document.getElementById("boardBody");
+  const item = { kind: "post", id: newBoardId("post"), author, title: title.value.trim(), category: category.value, body: body.value.trim(), createdAt: new Date().toISOString() };
+  if (!item.title || !item.body) return;
+  title.value = ""; body.value = ""; await queueBoardItem(item, document.getElementById("publishPostButton"));
 });
-document.getElementById("shareDraft").addEventListener("click", () => { const text = draftText(); if (!text) { showToast("Add your name and note first"); return; } shareText("Comets coach note", text); });
-document.getElementById("savedNotes").addEventListener("click", async (event) => { const send = event.target.closest("[data-send-note]"); const share = event.target.closest("[data-share-note]"); const remove = event.target.closest("[data-delete-note]"); if (send) { const note = notes[Number(send.dataset.sendNote)]; send.disabled = true; send.textContent = "Sending…"; try { await sendCoachNote(note); note.delivered = true; renderNotes(); showToast("Sent to Darwin"); } catch { send.disabled = false; send.textContent = "Retry"; showToast("Still could not send"); } return; } if (share) { const note = notes[Number(share.dataset.shareNote)]; shareText("Comets coach note", `COMETS COACH NOTE\nFrom: ${note.coach}\nType: ${note.type}${note.subject ? `\nPlayer/topic: ${note.subject}` : ""}\n\n${note.note}`); } if (remove) { notes.splice(Number(remove.dataset.deleteNote), 1); renderNotes(); } });
-renderNotes();
+document.getElementById("boardFeed").addEventListener("submit", async (event) => {
+  const form = event.target.closest(".comment-form"); if (!form) return; event.preventDefault();
+  const author = currentCoach(); if (!author) { coachIdentity.focus(); showToast("Choose your name before replying"); return; }
+  const field = form.querySelector("textarea"); const body = field.value.trim(); if (!body) return;
+  const item = { kind: "comment", id: newBoardId("comment"), parentId: form.dataset.parentId, author, category: "Other", body, createdAt: new Date().toISOString() };
+  field.value = ""; await queueBoardItem(item, form.querySelector("button"));
+});
+async function loadBoard(showLoading = false) {
+  const status = document.getElementById("boardStatus"); if (showLoading) status.textContent = "Refreshing…";
+  try {
+    const response = await fetch(`${BOARD_SOURCE}?v=${Date.now()}`, { cache: "no-store" }); if (!response.ok) throw new Error("Board unavailable");
+    boardData = await response.json();
+    const remoteIds = new Set(allBoardIds(boardData)); pendingBoardItems = pendingBoardItems.filter((item) => !remoteIds.has(item.id)); savePendingBoardItems();
+    status.textContent = boardData.updatedAt ? `Updated ${displayBoardTime(boardData.updatedAt)}` : "Up to date"; renderBoard(); updateBoardBadge();
+  } catch { status.textContent = "Offline — showing posts saved on this device"; renderBoard(); }
+}
+document.getElementById("refreshBoard").addEventListener("click", () => loadBoard(true));
+renderBoard(); loadBoard(); setInterval(() => { if (!document.hidden) loadBoard(); }, 60000);
 
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 let activeRecognition = null;
