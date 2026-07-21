@@ -26,6 +26,8 @@ A dependency-free, mobile-first coaching app for the Comets roster, rotations, p
 
 Coach notes save locally on the device and use the browser's native share sheet, which lets a coach send the structured note into GroupMe, Messages, or email without exposing a new backend. Automated Google Form creation was attempted, but the Google Forms API is disabled on Jeremy's configured Google project.
 
+Every text-entry field includes inline browser voice dictation. Tap the mic to start, speak, and tap again to stop. Dictation uses the browser's explicit microphone permission and inserts the transcript directly into the active field; no audio is stored by the app.
+
 ## Local preview
 
 ```bash

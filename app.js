@@ -249,4 +249,61 @@ document.getElementById("shareDraft").addEventListener("click", () => { const te
 document.getElementById("savedNotes").addEventListener("click", (event) => { const share = event.target.closest("[data-share-note]"); const remove = event.target.closest("[data-delete-note]"); if (share) { const note = notes[Number(share.dataset.shareNote)]; shareText("Comets coach note", `COMETS COACH NOTE\nFrom: ${note.coach}\nType: ${note.type}${note.subject ? `\nPlayer/topic: ${note.subject}` : ""}\n\n${note.note}`); } if (remove) { notes.splice(Number(remove.dataset.deleteNote), 1); renderNotes(); } });
 renderNotes();
 
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let activeRecognition = null;
+let activeDictationButton = null;
+function dictationLabel(field) {
+  const label = field.closest("label")?.childNodes[0]?.textContent?.trim();
+  return label || field.getAttribute("aria-label") || field.placeholder || "field";
+}
+function stopDictation() {
+  activeRecognition?.stop();
+}
+function finishDictation() {
+  activeDictationButton?.classList.remove("listening");
+  activeDictationButton?.setAttribute("aria-pressed", "false");
+  if (activeDictationButton) activeDictationButton.title = `Dictate ${activeDictationButton.dataset.label}`;
+  activeRecognition = null; activeDictationButton = null;
+}
+function startDictation(field, button) {
+  if (!SpeechRecognitionAPI) { showToast("Voice dictation is not supported here. Try Safari or Chrome."); return; }
+  if (activeRecognition) {
+    if (activeDictationButton === button) { stopDictation(); return; }
+    activeRecognition.abort(); finishDictation();
+  }
+  const recognition = new SpeechRecognitionAPI();
+  const baseValue = field.value.trim();
+  let finalTranscript = "";
+  recognition.lang = navigator.language || "en-US";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.onstart = () => { button.classList.add("listening"); button.setAttribute("aria-pressed", "true"); button.title = "Stop dictation"; field.focus(); showToast("Listening… tap the mic to stop"); };
+  recognition.onresult = (event) => {
+    let interimTranscript = "";
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const transcript = event.results[index][0].transcript;
+      if (event.results[index].isFinal) finalTranscript += transcript;
+      else interimTranscript += transcript;
+    }
+    field.value = [baseValue, `${finalTranscript}${interimTranscript}`.trim()].filter(Boolean).join(field.tagName === "TEXTAREA" ? " " : " ");
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  recognition.onerror = (event) => {
+    const messages = { "not-allowed": "Microphone permission is off", "audio-capture": "No microphone was found", "no-speech": "No speech heard — try again", network: "Voice dictation lost its connection" };
+    if (event.error !== "aborted") showToast(messages[event.error] || "Voice dictation stopped");
+  };
+  recognition.onend = finishDictation;
+  activeRecognition = recognition; activeDictationButton = button;
+  try { recognition.start(); } catch { finishDictation(); showToast("Could not start voice dictation"); }
+}
+document.querySelectorAll('input:not([type]), input[type="text"], textarea').forEach((field) => {
+  if (field.closest(".dictation-field")) return;
+  const wrapper = document.createElement("div"); wrapper.className = `dictation-field ${field.tagName === "TEXTAREA" ? "dictation-area" : ""}`;
+  field.parentNode.insertBefore(wrapper, field); wrapper.appendChild(field);
+  const label = dictationLabel(field);
+  const button = document.createElement("button"); button.type = "button"; button.className = "dictation-button"; button.dataset.label = label; button.title = `Dictate ${label}`; button.setAttribute("aria-label", `Dictate ${label}`); button.setAttribute("aria-pressed", "false");
+  button.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15Zm-1.5-8.5a1.5 1.5 0 1 1 3 0v5a1.5 1.5 0 1 1-3 0v-5Zm7 4.5v.5a5.5 5.5 0 0 1-11 0V11h-2v.5a7.5 7.5 0 0 0 6.5 7.43V22h2v-3.07a7.5 7.5 0 0 0 6.5-7.43V11h-2Z"/></svg>';
+  button.addEventListener("click", () => startDictation(field, button)); wrapper.appendChild(button);
+});
+
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
