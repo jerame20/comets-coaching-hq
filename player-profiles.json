@@ -1,15 +1,4 @@
 {
-  "updatedAt": "2026-07-21T17:50:00Z",
-  "profiles": {
-    "custom-darwin-qa-20260721": {
-      "id": "custom-darwin-qa-20260721",
-      "name": "Darwin QA",
-      "anchors": "CM",
-      "foot": "Right",
-      "emphasis": "Durable player pipeline verification",
-      "custom": true,
-      "archived": false,
-      "updatedAt": "2026-07-21T17:50:00Z"
-    }
-  }
+  "updatedAt": "",
+  "profiles": {}
 }
