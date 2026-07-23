@@ -23,6 +23,8 @@ SHEET_RANGE = "Form Responses 1!A:E"
 DISCORD_TARGET = "channel:1525223443421855855"
 MAX_SEEN = 500
 ERROR_ALERT_COOLDOWN_SECONDS = 3600
+FAILURES_BEFORE_ALERT = 3
+FETCH_RETRY_DELAYS_SECONDS = (2, 5)
 
 
 def load_state():
@@ -54,13 +56,25 @@ def run_command(command):
     return result.stdout
 
 
-def fetch_rows():
+def fetch_rows_once():
     output = run_command([
         GOG_SAFE, "sheets", "get", SHEET_ID, SHEET_RANGE,
         "--account", "jerame20@gmail.com", "--json", "--no-input",
     ])
     values = json.loads(output).get("values", [])
     return values[1:] if len(values) > 1 else []
+
+
+def fetch_rows():
+    last_error = None
+    for attempt in range(len(FETCH_RETRY_DELAYS_SECONDS) + 1):
+        try:
+            return fetch_rows_once()
+        except Exception as error:
+            last_error = error
+            if attempt < len(FETCH_RETRY_DELAYS_SECONDS):
+                time.sleep(FETCH_RETRY_DELAYS_SECONDS[attempt])
+    raise last_error
 
 
 def send_discord(message):
@@ -232,6 +246,8 @@ def format_app_idea(item):
 
 def alert_failure(state, error):
     now = int(time.time())
+    if int(state.get("consecutive_failures", 0)) < FAILURES_BEFORE_ALERT:
+        return
     if now - int(state.get("last_error_alert_at", 0)) < ERROR_ALERT_COOLDOWN_SECONDS:
         return
     try:
@@ -269,11 +285,14 @@ def main():
         state["seen"] = list(seen)[-MAX_SEEN:]
         state["last_success_at"] = int(time.time())
         state["last_error"] = ""
+        state["consecutive_failures"] = 0
+        state["last_error_alert_at"] = 0
         save_state(state)
         return 0
     except Exception as error:
         state["last_error"] = str(error)[-1200:]
         state["last_error_at"] = int(time.time())
+        state["consecutive_failures"] = int(state.get("consecutive_failures", 0)) + 1
         save_state(state)
         alert_failure(state, error)
         print(f"note intake failed: {error}", file=sys.stderr)
