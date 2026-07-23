@@ -1,6 +1,17 @@
 window.COMETS_APP = {
-  version: "1.4.2",
+  version: "1.4.3",
   releases: [
+    {
+      version: "1.4.3",
+      date: "July 23, 2026",
+      title: "Avyaan’s name, corrected",
+      summary: "The roster now uses Avyaan’s correct name everywhere while keeping existing saved game data intact.",
+      changes: [
+        "Updated Avyaan’s name across player cards, rotations, coverage, and exports.",
+        "Migrated stale local and shared profiles to Avyaan.",
+        "Preserved the existing player ID so saved attendance, lineups, and game history continue to work."
+      ]
+    },
     {
       version: "1.4.2",
       date: "July 21, 2026",

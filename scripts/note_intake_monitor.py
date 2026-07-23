@@ -149,8 +149,8 @@ def parse_player_profile_row(row):
         "archived": bool(payload.get("archived")),
         "updatedAt": clean(payload.get("updatedAt"), 80) or clean(timestamp, 80),
     }
-    if profile_id == "seed-atar" and profile["name"] == "Avyaan":
-        profile["name"] = "Atar"
+    if profile_id == "seed-atar" and profile["name"] == "Atar":
+        profile["name"] = "Avyaan"
     return profile
 
 

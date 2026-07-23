@@ -6,13 +6,14 @@ const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
 const ROSTER_KEY = "comets-roster-v1";
 const PLAYER_OVERRIDES_KEY = "comets-player-overrides-v1";
 const PLAYER_PROFILE_SOURCE = "https://raw.githubusercontent.com/jerame20/comets-coaching-hq/main/player-profiles.json";
-const seedPlayers = DATA.players.map(([name, foot, anchors, emphasis]) => ({ id: `seed-${slug(name)}`, sourceName: name, name, foot, anchors, emphasis, custom: false }));
+const LEGACY_SEED_IDS = { Avyaan: "seed-atar" };
+const seedPlayers = DATA.players.map(([name, foot, anchors, emphasis]) => ({ id: LEGACY_SEED_IDS[name] || `seed-${slug(name)}`, sourceName: name, name, foot, anchors, emphasis, custom: false }));
 let customPlayers;
 let playerOverrides;
 try { customPlayers = JSON.parse(localStorage.getItem(ROSTER_KEY) || "[]"); } catch { customPlayers = []; }
 try { playerOverrides = JSON.parse(localStorage.getItem(PLAYER_OVERRIDES_KEY) || "{}"); } catch { playerOverrides = {}; }
-if (playerOverrides["seed-atar"]?.name === "Avyaan") {
-  playerOverrides["seed-atar"] = { ...playerOverrides["seed-atar"], name: "Atar" };
+if (playerOverrides["seed-atar"]?.name === "Atar") {
+  playerOverrides["seed-atar"] = { ...playerOverrides["seed-atar"], name: "Avyaan" };
   localStorage.setItem(PLAYER_OVERRIDES_KEY, JSON.stringify(playerOverrides));
 }
 const allPlayers = () => [...seedPlayers.map((player) => ({ ...player, ...(playerOverrides[player.id] || {}) })), ...customPlayers].filter((player) => !player.archived);
@@ -532,7 +533,7 @@ async function loadSharedPlayerProfiles() {
     if (!response.ok) return;
     const payload = await response.json();
     Object.entries(payload.profiles || {}).forEach(([id, profile]) => {
-      const normalizedProfile = id === "seed-atar" && profile.name === "Avyaan" ? { ...profile, name: "Atar" } : profile;
+      const normalizedProfile = id === "seed-atar" && profile.name === "Atar" ? { ...profile, name: "Avyaan" } : profile;
       if (id.startsWith("seed-") && newerProfile(normalizedProfile, playerOverrides[id])) playerOverrides[id] = normalizedProfile;
       if (id.startsWith("custom-")) {
         const index = customPlayers.findIndex((player) => player.id === id);
